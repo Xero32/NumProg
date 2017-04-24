@@ -388,7 +388,7 @@ main (void){
   /* Invert L and R */
   printf("Start inversion of L and R \n");
   lr_invert(Ainvers);
-  print_Matrix(Ainvers);
+  print_matrix(Ainvers);
 
   /* Multiply  */
   printf("Multiplication of R^{-1} and L^{-1} \n");
@@ -400,7 +400,7 @@ main (void){
   norm = normfrob_diff_matrix(T);
   printf("At least the test\n");
   printf("|| A - A^{-1} - Id ||_{F} = %e\n", norm); 
-  
+  print_matrix(T);
   
   /* cleaning up */
   del_matrix(A);
