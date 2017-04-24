@@ -1,2 +1,0 @@
-# NumProg
-Tasks for NumProg
