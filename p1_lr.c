@@ -277,40 +277,54 @@ mm(pmatrix a, pmatrix b, pmatrix t){
 /* Inplace LR-decomposition without pivot search */
 void
 lr_decomp(pmatrix a){
+    
+    int i,j,k;
+    int lda = a->ld;
+    int n = a->rows;
+    double *aa = a->a;
 
-int i,j,k;
-int lda = a->ld;
-int n = a->rows;
-double *aa = a->a;
-
-for (k = 0; k < n; k++){
-    for(i = k+1; i < n; i++){
-        aa[i+k*lda] /= aa[k+k*lda];
-    }
-    for(i = k+1; i < n; i++){
-        for(j = k+1; j < n; j++){
-            aa[i+j*lda] -= aa[i + k*lda] * aa[k + j*lda];
+    for (k = 0; k < n; k++){
+        for(i = k+1; i < n; i++){
+            aa[i+k*lda] /= aa[k+k*lda];
+        }
+        for(i = k+1; i < n; i++){
+            for(j = k+1; j < n; j++){
+                aa[i+j*lda] -= aa[i + k*lda] * aa[k + j*lda];
+            }
         }
     }
-}
-return;
 }
 
 /* Inplace inversion of L and R */
 void
 lr_invert(pmatrix a){
-  
-  /* ---------------------------------------------- */ 
-  /*                                                */
-  /* T T T T T     O O       D D           O O      */
-  /*     T        O   O      D   D        O   O     */
-  /*     T       O     O     D     D     O     O    */ 
-  /*     T       O     O     D     D     O     O    */ 
-  /*     T        O   O      D   D        O   O     */
-  /*     T         O O       D D           O O      */
-  /*                                                */ 
-  /* ---------------------------------------------- */   
 
+    int i,j,k;
+    int lda = a->ld;
+    int n = a->rows;
+    double *aa = a->a;    
+    
+    //R invert
+    for(k = n-1; k-- > 0;){
+        aa[k + k*lda] = 1 / aa[k + k*lda];
+        for(i = k-1; i-- > 0;){
+            for(j = 0; j < k; j++){
+                aa[i + k*lda] = -aa[i + (k-j)*lda] * aa[(k-j) + k*lda] / aa[i + i*lda];
+                //-aa[i + (k-1)*lda] * aa[(k-1) + k*lda] / aa[i+i*lda];
+                
+            }
+        }
+    }
+    
+    //L invert
+    for(i = 1; i < n; i++){
+        for(j = 0; j < i; j++){
+            aa[i + j*lda] = -aa[i + j*lda];
+            for(k = j+1; k < i; k++){
+                aa[i + j*lda] -= aa[i + k*lda] * aa[k + j*lda];   
+            }
+        }
+    }
 }
 
 /* Inplace multiplication of R^{-1} with L^{-1} */ 
