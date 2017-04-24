@@ -302,26 +302,29 @@ lr_invert(pmatrix a){
     int i,j,k;
     int lda = a->ld;
     int n = a->rows;
-    double *aa = a->a;    
+    double *aa = a->a;
+    double s;
     
     //R invert
-    for(k = n-1; k-- > 0;){
-        aa[k + k*lda] = 1 / aa[k + k*lda];
-        for(i = k-1; i-- > 0;){
-            for(j = 0; j < k; j++){
-                aa[i + k*lda] = -aa[i + (k-j)*lda] * aa[(k-j) + k*lda] / aa[i + i*lda];
-                //-aa[i + (k-1)*lda] * aa[(k-1) + k*lda] / aa[i+i*lda];
-                
+    for(i = n; i-- > 0;){
+        for(j = n; j-- > i+1;){
+            s = 0.0;
+            for(k = j; k >= i+1; k--){                   
+                s -= aa[i + k*lda] * aa[k + j*lda];
             }
-        }
+            aa[i + j*lda] = s / aa[i + i*lda];
+          }
+          aa[i + i*lda] = 1 / aa[i + i*lda];
     }
     
     //L invert
     for(i = 1; i < n; i++){
         for(j = 0; j < i; j++){
             aa[i + j*lda] = -aa[i + j*lda];
+            printf("index: %d,\t value: %f\n",i+j*lda,aa[i+j*lda]);
             for(k = j+1; k < i; k++){
                 aa[i + j*lda] -= aa[i + k*lda] * aa[k + j*lda];   
+                printf("index: %d,\t value: %f\n",i+j*lda,aa[i+j*lda]);
             }
         }
     }
