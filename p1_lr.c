@@ -303,16 +303,16 @@ lr_invert(pmatrix a){
     int lda = a->ld;
     int n = a->rows;
     double *aa = a->a;
-    double s;
+    double sum;
     
     //R invert
     for(i = n; i-- > 0;){
         for(j = n; j-- > i+1;){
-            s = 0.0;
+            sum = 0.0;
             for(k = j; k >= i+1; k--){                   
-                s -= aa[i + k*lda] * aa[k + j*lda];
+                sum -= aa[i + k*lda] * aa[k + j*lda];
             }
-            aa[i + j*lda] = s / aa[i + i*lda];
+            aa[i + j*lda] = sum / aa[i + i*lda];
           }
           aa[i + i*lda] = 1 / aa[i + i*lda];
     }
