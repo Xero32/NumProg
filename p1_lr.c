@@ -388,7 +388,7 @@ main (void){
   /* Invert L and R */
   printf("Start inversion of L and R \n");
   lr_invert(Ainvers);
-  printMatrix(Ainvers);
+  print_Matrix(Ainvers);
 
   /* Multiply  */
   printf("Multiplication of R^{-1} and L^{-1} \n");
