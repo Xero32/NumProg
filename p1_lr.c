@@ -307,14 +307,14 @@ lr_invert(pmatrix a){
     
     //R invert
     for(i = n; i-- > 0;){
+        aa[i + i*lda] = 1 / aa[i + i*lda];
         for(j = n; j-- > i+1;){
             sum = 0.0;
             for(k = j; k >= i+1; k--){                   
                 sum -= aa[i + k*lda] * aa[k + j*lda];
             }
-            aa[i + j*lda] = sum / aa[i + i*lda];
+            aa[i + j*lda] = sum * aa[i + i*lda];
           }
-          aa[i + i*lda] = 1 / aa[i + i*lda];
     }
     
     //L invert
