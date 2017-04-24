@@ -373,27 +373,27 @@ main (void){
 
   pmatrix A, Ainvers, T;		/* Matrices */
   double norm;				/* Norm */
-  int n = 3;				/* Problem dimension */
-  pmatrix B;
+  int n = 4;				/* Problem dimension */
   /* Chose a problem */
-  B = new_3x3_matrix();
-  A = new_2x2_matrix();
-  Ainvers= new_2x2_matrix();
+  A = new_4x4_matrix();
+  Ainvers= new_4x4_matrix();
   T = new_zero_matrix(n, n);
+  print_matrix(Ainvers);
   
-  print_matrix(B);
   /* LR - decomposition */
   printf("Start decomposition \n");
-  lr_decomp(B);
-
-  print_matrix(B);
+  lr_decomp(Ainvers);
+  print_matrix(Ainvers);
+  
   /* Invert L and R */
   printf("Start inversion of L and R \n");
   lr_invert(Ainvers);
+  printMatrix(Ainvers);
 
   /* Multiply  */
   printf("Multiplication of R^{-1} and L^{-1} \n");
   lr_mm(Ainvers);
+  print_matrix(Ainvers);
   
   /* Test invers  */
   mm(A, Ainvers, T); 
@@ -403,9 +403,9 @@ main (void){
   
   
   /* cleaning up */
-  //del_matrix(A);
-  //del_matrix(Ainvers);
-  //del_matrix(T);
+  del_matrix(A);
+  del_matrix(Ainvers);
+  del_matrix(T);
   
   return EXIT_SUCCESS;
 }
