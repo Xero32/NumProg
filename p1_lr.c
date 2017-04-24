@@ -321,10 +321,8 @@ lr_invert(pmatrix a){
     for(i = 1; i < n; i++){
         for(j = 0; j < i; j++){
             aa[i + j*lda] = -aa[i + j*lda];
-            printf("index: %d,\t value: %f\n",i+j*lda,aa[i+j*lda]);
             for(k = j+1; k < i; k++){
                 aa[i + j*lda] -= aa[i + k*lda] * aa[k + j*lda];   
-                printf("index: %d,\t value: %f\n",i+j*lda,aa[i+j*lda]);
             }
         }
     }
