@@ -278,69 +278,24 @@ mm(pmatrix a, pmatrix b, pmatrix t){
 void
 lr_decomp(pmatrix a){
 
-  /* ---------------------------------------------- */ 
-  /*                                                */
-  /* T T T T T     O O       D D           O O      */
-  /*     T        O   O      D   D        O   O     */
-  /*     T       O     O     D     D     O     O    */ 
-  /*     T       O     O     D     D     O     O    */ 
-  /*     T        O   O      D   D        O   O     */
-  /*     T         O O       D D           O O      */
-  /*                                                */ 
-  /* ---------------------------------------------- */  
-  
-int i,j,k,l,m;
+int i,j,k;
 int lda = a->ld;
 int n = a->rows;
 double *aa = a->a;
 
-
-for (k = 1; 1 <= n; k++){
-    for(i = k+1; i <= n; i++){
-        a[i][k]=a[i][k]/a[k][k];
+for (k = 0; k < n; k++){
+    for(i = k+1; i < n; i++){
+        aa[i+k*lda] /= aa[k+k*lda];
     }
-    for(i = k+1; i <= n; i++){
-        for(j = k+1; i <= n; j++){
-            a ij = a ij - a ik * a kj;      //TODO
+    for(i = k+1; i < n; i++){
+        for(j = k+1; j < n; j++){
+            aa[i+j*lda] -= aa[i + k*lda] * aa[k + j*lda];
         }
     }
-
-
-
-
-
-
-
-
-
-//TODO right bottom corner still not correct, when testing LR=A
-
-for(k=0; k < n; k++){
-    //for(i=k+1; i < n; i++){
-        
-        for(l=0; l < n-k-1; l++){
-            aa[l+k+1+k*lda] /= aa[k+k*lda];               //scaling function ???
-            printf("scal: index: %d\t value: %f\n",l+k+1+k*lda,aa[l+k+1+k*lda]);
-        }
-        
-        for(m=0; m < n-k-1; m++){ //TODO
-                  
-            aa[m*lda+k+1+(k+1)*lda] -= aa[m+k+1+k*lda]*aa[m*lda+k+(k+1)*lda];
-            aa[m*lda+k+1+(k+1)*lda+1] -= aa[m+k+1+k*lda+1]*aa[m*lda+k+(k+1)*lda+lda];
-            printf("ger: index: %d\t value: %f\n",m*lda+k+1+(k+1)*lda,aa[m*lda+k+1+(k+1)*lda]);
-            printf("ger: index: %d\t value: %f\n",m*lda+k+1+(k+1)*lda+1,aa[m*lda+k+1+(k+1)*lda+1]);
-        }
-/*        //a[i][k] = a[i][k]/a[k][k];
-        aa[k+i*lda] = aa[k+i*lda]/aa[k+k*lda];
-    }
-    for(j=k+1; j < n; j++){
-        //a[j][j] = a[j][j] - a[j][k]*a[k][j]; //??  /* leaves a_00 at the initial value ?
-        aa[j+j*lda] = aa[j+j*lda] - aa[k+j*lda]*aa[j];*/
-    //} // check memory access
 }
+return;
 }
 
-//TODO: reactivate cleaning fcts
 /* Inplace inversion of L and R */
 void
 lr_invert(pmatrix a){
