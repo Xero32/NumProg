@@ -306,14 +306,6 @@ for (k = 1; 1 <= n; k++){
     }
 
 
-    printf("Hallo i bims 1 test\n");
-
-
-
-
-
-
-
 
 
 
