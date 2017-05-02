@@ -3,7 +3,7 @@
 /* 	Serie 2 - LR-Zerlegung and inversion inkl. BLAS	 	 */
 /* ------------------------------------------------------------- */
 /*	Autoren: 	Marko Hollm, Marvin Becker         	 */
-/*	Versionsnummer:	0.5					 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -41,12 +41,13 @@ static void //TODO
 lowersolve_matrix(int unit, const pmatrix a, pvector b){
     int k;
     int lda = a->ld;
-    //double *aa = a->a;
-    double *bb = b->x;
+    //double *bb = b->x;
     
     for(k=0; k<unit; k++){
-        axpy(unit-k-1, -bb[k], a->a+(k+1)+k*lda, 1, b->x+k+1, 1);
+        axpy(unit-k-1, -b->x[k], a->a+(k+1)+k*lda, 1, b->x+k+1, 1);
     }
+    //printf("inside lowersolve\n");
+    //print_matrix(a);
 }
 
 
@@ -55,26 +56,18 @@ uppersolve_matrix(int unit, const pmatrix a, pvector b){
     int k;
     int lda = a->ld;
     double *aa = a->a;
-    double *bb = b->x;
+    //double *bb = b->x;
     for(k=unit; k-->0;){
-        //assert(aa[k+k*lda]);
-        bb[k] /= aa[k+k*lda];
-        axpy(k, -bb[k], a->a+k*lda, 1, b->x, 1);
+        assert(aa[k+k*lda]);
+        b->x[k] /= aa[k+k*lda];
+        axpy(k, -b->x[k], a->a+k*lda, 1, b->x, 1);
     }
+    //printf("inside uppersolve\n");
+    //print_matrix(a);
     
 }
-/* Problem: Inversion of Upper Matrix not working properly
- * result is off by only a little 
- * only last column is off by much (for n=6)
- * for n=5 last column seems ok
- * 
- * 
- * for any n:   first iteration (Hilbert Matrix) returns a big error value (in the range of 1.0E+n ); for n >> 20 the error is ~1.0E+20
- *              second iteration (DiagHilbert Matrix) returns error values usually around 1.0E-01, even for big n
- *  
- * note: routine might be taking too long
- * */
 
+/*
 static pmatrix //TODO  inversion of upper right matrix not working
 invert(const pmatrix a){
     int n = a->rows;
@@ -127,6 +120,21 @@ invert(const pmatrix a){
     return a;
 }
 
+*/
+//TODO alternatively:
+static pmatrix
+invert(const pmatrix a){
+    int n = a-> rows;
+    pvector e;
+    pmatrix z = new_identity_matrix(n);
+    for(int i = 0; i < n; i++){
+        e = matrix_col(z,i);
+        lowersolve_matrix(n,a,e);
+        uppersolve_matrix(n,a,e);
+    }
+    return z;
+}
+
 /* ============================================================
  * Main program
  * ============================================================ */
@@ -140,7 +148,7 @@ main(void){
   int rows;
   int i;
   
-  rows = 10;
+  rows = 12;
   
   /* ------------------------------------------------------------
    * Hilbert matrix, LR decomposition
@@ -161,10 +169,10 @@ main(void){
   //printf("matrix a:\n");
   //print_matrix(a);
   lrdecomp(a);
-  //printf("decomp a:\n");
+  ////printf("decomp matrix a:\n");
   //print_matrix(a);
   inva = invert(a);
-  //printf("invert a:\n");
+  //printf("invert matrix:\n");
   //print_matrix(inva);
   gemv(false, a->rows, a->cols, 1.0, inva->a, a->ld, b->x, 1, x->x, 1);
 
@@ -179,7 +187,7 @@ main(void){
   printf("  Relative max error: %.3e\n", err_abs/norm_x);
 
   del_matrix(a);
-  //del_matrix(inva); //TODO
+  del_matrix(inva); 
   del_vector(x);
   del_vector(xrev);
   del_vector(b);
@@ -199,16 +207,13 @@ main(void){
   for(i = 0; i < rows; i++){
     xrev->x[i] = 1.0 / (1.0 + i);
   }
-  //printf("Matrix a:\n");
-  //print_matrix(a);
+
   gemv(false, a->rows, a->cols, 1.0, a->a, a->ld, xrev->x, 1, b->x, 1);
   
   lrdecomp(a);
-  //printf("decomp matrix a\n");
-  //print_matrix(a);
+
   inva = invert(a);
-  //printf("inverted matrix a:\n");
-  //print_matrix(inva);
+
   gemv(false, a->rows, a->cols, 1.0, inva->a, a->ld, b->x, 1, x->x, 1);
   
   err_abs = 0.0;
@@ -222,7 +227,7 @@ main(void){
   printf("  Relative max error: %.3e\n", err_abs/norm_x);
     
   del_matrix(a);
-  //del_matrix(inva); //TODO
+  del_matrix(inva);
   del_vector(x);
   del_vector(xrev);
   del_vector(b);
