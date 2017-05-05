@@ -21,7 +21,7 @@
 /* ************************************************* */
 
 /* P1 */
-
+/*
 static void
 lr_decomp(pmatrix a){
 
@@ -42,6 +42,7 @@ lr_decomp(pmatrix a){
         }
     }
 }
+*/
 /* P2 (with slightly changed name) */
 
 static void
@@ -85,14 +86,24 @@ blocklr_decomp(pmatrix a, int m){
     int oi, oj, ok, ni, nj, nk;
     for(k=0; k<m; k++) {
         ok = n * k / m; nk = n * (k+1) / m - ok;
-        printf("original diaghilbert matrix:\n");
-        print_matrix(a);
+        //printf("original diaghilbert matrix:\n");
+        //print_matrix(a);
         pmatrix asub = new_matrix(nk,nk);
-        double *AS = asub->a;
         asub = init_sub_matrix(asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
-        printf("loop val: %d\t offset: %d\t dim submatrix: %d\n asub: \n",k,ok,nk);
-        print_matrix(asub);
+        //printf("loop val: %d\t offset: %d\t dim submatrix: %d\n asub: \n",k,ok,nk);
+        //print_matrix(asub);
         lr_decomp_blas(asub);     //(nk, A+ok+ok*ldA, ldA);
+        double *AS = asub->a;
+        for(j = ok; j < ok+nk; j++){
+            for(i = ok; i < ok+nk; i++){
+                int k = i-ok;
+                int m = j-ok;
+                A[i+j*ldA] = AS[k+m*nk];
+            }
+        }
+        
+        
+        
         for(j=k+1; j<m; j++) {
             oj = n * j / m; nj = n * (j+1) / m - oj;
             block_lsolve(nk, nj, A+ok+ok*ldA, ldA, A+ok+oj*ldA, ldA);
@@ -123,8 +134,8 @@ main(void){
   //real time;
   int m;
 
-  n = 8;	//2000				/* matrix dimension */
-  m = 4;	//100				/* number of matrix parts */
+  n = 4096;	//2000				/* matrix dimension */
+  m = 32;	//100				/* number of matrix parts */
 
   pstopwatch sw = new_stopwatch();
   start_stopwatch(sw);
@@ -155,7 +166,7 @@ main(void){
    * first version of LR decomposition
    * ------------------------------------------------------------ */
   A = new_diaghilbert_matrix(n);
-  lr_decomp(A);
+  //lr_decomp(A);
   //printf("Basic decomp:\n");
   //print_matrix(A);
   del_matrix(A);  
