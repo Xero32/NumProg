@@ -58,10 +58,6 @@ lr_decomp_blas(pmatrix a){
     }
 }
 
-
-/* ************************************************* */
-
-
 static void //TODO
 block_lsolve(int n, int m, const real *L, int ldL, real *B, int ldB){
 for(k=0; k<n; k++)
@@ -81,14 +77,17 @@ block_rsolve_trans(int n, int m, const real *R, int ldR, real *B, int ldB){
 static void
 blocklr_decomp(pmatrix a, int m){
     int i, j, k;
+    int lda = a->ld;
+    int n = a-> rows;
+    double *A = a->a;
     int oi, oj, ok, ni, nj, nk;
     for(k=0; k<m; k++) {
         ok = n * k / m; nk = n * (k+1) / m - ok;
-        lrdecomp(nk, A+ok+ok*ldA, ldA);
+        init_sub_matrix(pmatrix asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
+        lr_decomp_blas(asub);     //(nk, A+ok+ok*ldA, ldA);
         for(j=k+1; j<m; j++) {
             oj = n * j / m; nj = n * (j+1) / m - oj;
-            block_lsolve(nk, nj, A+ok+ok*ldA, ldA,
-            A+ok+oj*ldA, ldA);
+            block_lsolve(nk, nj, A+ok+ok*ldA, ldA, A+ok+oj*ldA, ldA);
             block_rsolve_trans(nk, nj, A+ok+ok*ldA, ldA, A+oj+ok*ldA, ldA);
         }
         for(j=k+1; j<m; j++) {
@@ -124,24 +123,16 @@ main(void){
   /* ------------------------------------------------------------
    * Block-LR decomposition
    * ------------------------------------------------------------ */
+   init_sub_matrix 
+  
+  
+  
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
    * ------------------------------------------------------------ */
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-
-  /* ---------------------------------------------- */ 
-  /*                                                */
-  /* T T T T T     O O       D D           O O      */
-  /*     T        O   O      D   D        O   O     */
-  /*     T       O     O     D     D     O     O    */ 
-  /*     T       O     O     D     D     O     O    */ 
-  /*     T        O   O      D   D        O   O     */
-  /*     T         O O       D D           O O      */
-  /*                                                */ 
-  /* ---------------------------------------------- */
-  
   
  
   /* cleaning up */
