@@ -21,6 +21,7 @@
 /* ************************************************* */
 
 /* P1 */
+
 static void
 lr_decomp(pmatrix a){
 
@@ -31,6 +32,7 @@ lr_decomp(pmatrix a){
 
     for (k = 0; k < n; k++){
         for(i = k+1; i < n; i++){
+            assert(aa[k+k*lda]);
             aa[i+k*lda] /= aa[k+k*lda];  //assert; nicht durch 0 teilen
         }
         for(i = k+1; i < n; i++){
@@ -40,7 +42,6 @@ lr_decomp(pmatrix a){
         }
     }
 }
-
 /* P2 (with slightly changed name) */
 
 static void
@@ -60,9 +61,10 @@ lr_decomp_blas(pmatrix a){
 
 static void //TODO
 block_lsolve(int n, int m, const real *L, int ldL, real *B, int ldB){
-for(k=0; k<n; k++)
     int k;
-    ger(n-k-1, m, -1.0, L+(k+1)+k*ldL, 1, B+k, ldB, B+(k+1), ldB);
+    for(k=0; k<n; k++){
+        ger(n-k-1, m, -1.0, L+(k+1)+k*ldL, 1, B+k, ldB, B+(k+1), ldB);
+    }
 }
 
 static void
@@ -77,13 +79,19 @@ block_rsolve_trans(int n, int m, const real *R, int ldR, real *B, int ldB){
 static void
 blocklr_decomp(pmatrix a, int m){
     int i, j, k;
-    int lda = a->ld;
+    int ldA = a->ld;
     int n = a-> rows;
     double *A = a->a;
     int oi, oj, ok, ni, nj, nk;
     for(k=0; k<m; k++) {
         ok = n * k / m; nk = n * (k+1) / m - ok;
-        init_sub_matrix(pmatrix asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
+        printf("original diaghilbert matrix:\n");
+        print_matrix(a);
+        pmatrix asub = new_matrix(nk,nk);
+        double *AS = asub->a;
+        asub = init_sub_matrix(asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
+        printf("loop val: %d\t offset: %d\t dim submatrix: %d\n asub: \n",k,ok,nk);
+        print_matrix(asub);
         lr_decomp_blas(asub);     //(nk, A+ok+ok*ldA, ldA);
         for(j=k+1; j<m; j++) {
             oj = n * j / m; nj = n * (j+1) / m - oj;
@@ -98,6 +106,7 @@ blocklr_decomp(pmatrix a, int m){
             A+oi+ok*ldA, ldA, A+ok+oj*ldA, ldA, 1.0, A+oi+oj*ldA, ldA);
             }
         }
+    del_matrix(asub);        
     }
 }
 
@@ -110,33 +119,52 @@ int
 main(void){
 
   int n;
-  pstopwatch sw;
   pmatrix A;
-  real time;
+  //real time;
   int m;
 
-  n = 2000;					/* matrix dimension */
-  m = 100;					/* number of matrix parts */
+  n = 8;	//2000				/* matrix dimension */
+  m = 4;	//100				/* number of matrix parts */
 
-
+  pstopwatch sw = new_stopwatch();
+  start_stopwatch(sw);
   
   /* ------------------------------------------------------------
    * Block-LR decomposition
    * ------------------------------------------------------------ */
-   init_sub_matrix 
+  A = new_diaghilbert_matrix(n);
+  blocklr_decomp(A,m);  
+  //printf("Block decomp:\n");
+  //print_matrix(A);
+  del_matrix(A);
   
-  
-  
+  printf("Duration of Block decomp: %f\n",stop_stopwatch(sw));
+  start_stopwatch(sw);
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
    * ------------------------------------------------------------ */
+  A = new_diaghilbert_matrix(n);
+  lr_decomp_blas(A);
+  //printf("BLAS decomp:\n");
+  //print_matrix(A);
+  del_matrix(A);
+  
+  printf("Duration of BLAS decomp: %f\n",stop_stopwatch(sw));
+  start_stopwatch(sw);
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
+  A = new_diaghilbert_matrix(n);
+  lr_decomp(A);
+  //printf("Basic decomp:\n");
+  //print_matrix(A);
+  del_matrix(A);  
   
+  printf("Duration of basic decomp: %f\n",stop_stopwatch(sw));
  
+  
   /* cleaning up */
   del_stopwatch(sw);
-
+  
   return EXIT_SUCCESS;
 }
