@@ -131,12 +131,9 @@ init_sub_matrix(pmatrix asub, pmatrix a, int rows, int roff, int cols, int coff)
         for(int i = roff; i < rows+roff; i++){
             int k = i - roff;
             int m = j - coff;
-            //asub->a+k+m*rows = a->a+i+j*lda;
             AS[k+m*rows] = A[i+j*lda];
         }
     }
-//     printf("matrix asub:\n");
-//     print_matrix(asub);
     return asub;
 }
 

@@ -85,19 +85,14 @@ blocklr_decomp(pmatrix a, int m){
     
     for(k=0; k<m; k++) {
         ok = n * k / m; nk = n * (k+1) / m - ok;
-        //printf("original diaghilbert matrix:\n");
-        //print_matrix(a);
         pmatrix asub = new_matrix(nk,nk);
-        //TODO//asub = init_sub_matrix(asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
-        //printf("loop val: %d\t offset: %d\t dim submatrix: %d\n asub: \n",k,ok,nk);
-        //print_matrix(asub);
         asub = init_sub_matrix(asub, a, nk, ok, nk, ok);
-        lr_decomp_blas(asub);     //(nk, A+ok+ok*ldA, ldA);
+        
+        lr_decomp_blas(asub);    
         double *AS = asub->a;
 
         for(j = ok; j < ok+nk; j++){
             for(i = ok; i < ok+nk; i++){
-            
                 int u = i-ok;
                 int v = j-ok;
                 A[i+j*ldA] = AS[u+v*nk];
@@ -136,44 +131,40 @@ main(void){
   int max;
   FILE *f = NULL;
   n = 2000;     /* matrix dimension */
-  m = 16;
+  m = 100;
   int ctr = 1;
   max = 0;
-//  FILE *f = fopen("data6.dat","w");
-				
-//   m = 16;				
-//   int ctr = 1;  
-//   while(m < n/6){ 
-switch(n){
-    case 1000: f = fopen("data1.dat","w"); max = 10; break;
-    case 2000: f = fopen("data2.dat","w"); max = 11; break;
-    case 3000: f = fopen("data3.dat","w"); max = 14; break;
-    case 4000: f = fopen("data4.dat","w"); max = 17; break;
-    case 5000: f = fopen("data5.dat","w"); max = 18; break;
-    case 6000: f = fopen("data6.dat","w"); max = 18; break;
-}
-
-    REPEAT:
-  switch(ctr){   /* number of matrix parts */
-//       case 1: m = 16; break;
-      case 2: m = n/100; break;
-      case 3: m = 32; break;
-      case 4: m = 50; break;
-      case 5: m = 64; break;
-      case 6: m = 100; break;
-      case 7: m = 128; break;
-      case 8: m = 150; break;
-      case 9: m = 200; break;
-      case 10: m = 250; break;
-      case 11: m = 300; break;
-      case 12: m = 350; break;
-      case 13: m = 400; break;
-      case 14: m = 450; break;
-      case 15: m = 500; break;
-      case 16: m = 550; break;
-      case 17: m = 600; break;
-      case 18: m = 650; break;
-  }
+				 
+// switch(n){
+//     case 1000: f = fopen("data1.dat","w"); max = 10; break;
+//     case 2000: f = fopen("data2.dat","w"); max = 11; break;
+//     case 3000: f = fopen("data3.dat","w"); max = 14; break;
+//     case 4000: f = fopen("data4.dat","w"); max = 17; break;
+//     case 5000: f = fopen("data5.dat","w"); max = 18; break;
+//     case 6000: f = fopen("data6.dat","w"); max = 18; break;
+// }
+// 
+//     REPEAT:
+//   switch(ctr){   /* number of matrix parts */
+// //       case 1: m = 16; break;
+//       case 2: m = n/100; break;
+//       case 3: m = 32; break;
+//       case 4: m = 50; break;
+//       case 5: m = 64; break;
+//       case 6: m = 100; break;
+//       case 7: m = 128; break;
+//       case 8: m = 150; break;
+//       case 9: m = 200; break;
+//       case 10: m = 250; break;
+//       case 11: m = 300; break;
+//       case 12: m = 350; break;
+//       case 13: m = 400; break;
+//       case 14: m = 450; break;
+//       case 15: m = 500; break;
+//       case 16: m = 550; break;
+//       case 17: m = 600; break;
+//       case 18: m = 650; break;
+//   }
   pstopwatch sw = new_stopwatch();
   /* ------------------------------------------------------------
    * Block-LR decomposition
@@ -187,35 +178,28 @@ switch(n){
 //   printf("Block decomp:\n");
 //   print_matrix(A);
   printf("Duration of Block decomp: %f\n",time1 = stop_stopwatch(sw));
-//   del_matrix(A);
   
-//   if(m){
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
    * ------------------------------------------------------------ */
-//     A = new_diaghilbert_matrix(n);
     start_stopwatch(sw);
     lr_decomp_blas(B);
 //     printf("BLAS decomp:\n");
 //     print_matrix(B);
       
     printf("Duration of BLAS decomp: %f\n",time2 = stop_stopwatch(sw));
-//     del_matrix(A);
   
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-  if(n < 4001){
-      if(m == 16){
-//     A = new_diaghilbert_matrix(n);
+//   if(n < 4001){
+//       if(m == 16){
     start_stopwatch(sw);
     lr_decomp(C);
 //     printf("Basic decomp:\n");
 //     print_matrix(C);
     printf("Duration of basic decomp: %f\n",time3 = stop_stopwatch(sw));
-    } 
-    //else time3 = 0.0;
-  }
+//     } 
 //   }
   /* ------------------------------------------------------------
    * test functioning
@@ -237,23 +221,14 @@ switch(n){
   del_matrix(A);
   del_matrix(B);
   del_matrix(C);
-  //del_matrix(asub);
 
   if(f){
       fprintf(f,"%d\t%f\t%f\t%f\n",m,time1,time2,time3);
   }
 
-//   if(ctr){
-//     m = 50;
-//     ctr = 0;
-//   }
-//   else m += 50; 
-//   }
-//   
-
   if(ctr <= max){
       ctr++;
-      goto REPEAT;
+//       goto REPEAT;
   }
   
   if(f)  fclose(f);
