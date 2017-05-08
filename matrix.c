@@ -114,18 +114,29 @@ matrix_col(pmatrix a, int i){
 
 pmatrix //TODO
 init_sub_matrix(pmatrix asub, pmatrix a, int rows, int roff, int cols, int coff){
-    double *aa = a->a;
+    
+//     asub->a = a->a+roff+coff*a->ld;
+//     asub->ld=a->ld;
+//     asub->rows = rows;
+//     asub->cols = cols;
+//     printf("matrix asub:\n");
+//     print_matrix(asub);
+//     
+//     printf("matrix a:\n");
+//     print_matrix(a);
+    double *A = a->a;
     int lda = a->ld;
-    asub = new_matrix(rows, cols);
     double *AS = asub->a;
-    //check if asub quadratic
     for(int j = coff; j < cols+coff; j++){
         for(int i = roff; i < rows+roff; i++){
             int k = i - roff;
             int m = j - coff;
-            AS[k+m*rows] = aa[i+j*lda];
+            //asub->a+k+m*rows = a->a+i+j*lda;
+            AS[k+m*rows] = A[i+j*lda];
         }
-    }       
+    }
+//     printf("matrix asub:\n");
+//     print_matrix(asub);
     return asub;
 }
 

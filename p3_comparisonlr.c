@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 3 - Block-LR-Zerlegung und Vergleich	 	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 				 		 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marvin Becker, Marko Hollm			 		 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -21,7 +21,6 @@
 /* ************************************************* */
 
 /* P1 */
-/*
 static void
 lr_decomp(pmatrix a){
 
@@ -42,7 +41,6 @@ lr_decomp(pmatrix a){
         }
     }
 }
-*/
 /* P2 (with slightly changed name) */
 
 static void
@@ -84,25 +82,27 @@ blocklr_decomp(pmatrix a, int m){
     int n = a-> rows;
     double *A = a->a;
     int oi, oj, ok, ni, nj, nk;
+    
     for(k=0; k<m; k++) {
         ok = n * k / m; nk = n * (k+1) / m - ok;
         //printf("original diaghilbert matrix:\n");
         //print_matrix(a);
         pmatrix asub = new_matrix(nk,nk);
-        asub = init_sub_matrix(asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
+        //TODO//asub = init_sub_matrix(asub, a, nk, ok, nk, ok); //(asub, a, rows, roff, cols, coff)
         //printf("loop val: %d\t offset: %d\t dim submatrix: %d\n asub: \n",k,ok,nk);
         //print_matrix(asub);
+        asub = init_sub_matrix(asub, a, nk, ok, nk, ok);
         lr_decomp_blas(asub);     //(nk, A+ok+ok*ldA, ldA);
         double *AS = asub->a;
+
         for(j = ok; j < ok+nk; j++){
             for(i = ok; i < ok+nk; i++){
-                int k = i-ok;
-                int m = j-ok;
-                A[i+j*ldA] = AS[k+m*nk];
+            
+                int u = i-ok;
+                int v = j-ok;
+                A[i+j*ldA] = AS[u+v*nk];
             }
-        }
-        
-        
+        }      
         
         for(j=k+1; j<m; j++) {
             oj = n * j / m; nj = n * (j+1) / m - oj;
@@ -117,7 +117,7 @@ blocklr_decomp(pmatrix a, int m){
             A+oi+ok*ldA, ldA, A+ok+oj*ldA, ldA, 1.0, A+oi+oj*ldA, ldA);
             }
         }
-    del_matrix(asub);        
+//      del_matrix(asub);        
     }
 }
 
@@ -130,52 +130,132 @@ int
 main(void){
 
   int n;
-  pmatrix A;
-  //real time;
+  pmatrix A,B,C;
+  real time1,time2,time3;
   int m;
+  int max;
+  FILE *f = NULL;
+  n = 2000;     /* matrix dimension */
+  m = 16;
+  int ctr = 1;
+  max = 0;
+//  FILE *f = fopen("data6.dat","w");
+				
+//   m = 16;				
+//   int ctr = 1;  
+//   while(m < n/6){ 
+switch(n){
+    case 1000: f = fopen("data1.dat","w"); max = 10; break;
+    case 2000: f = fopen("data2.dat","w"); max = 11; break;
+    case 3000: f = fopen("data3.dat","w"); max = 14; break;
+    case 4000: f = fopen("data4.dat","w"); max = 17; break;
+    case 5000: f = fopen("data5.dat","w"); max = 18; break;
+    case 6000: f = fopen("data6.dat","w"); max = 18; break;
+}
 
-  n = 4096;	//2000				/* matrix dimension */
-  m = 32;	//100				/* number of matrix parts */
-
+    REPEAT:
+  switch(ctr){   /* number of matrix parts */
+//       case 1: m = 16; break;
+      case 2: m = n/100; break;
+      case 3: m = 32; break;
+      case 4: m = 50; break;
+      case 5: m = 64; break;
+      case 6: m = 100; break;
+      case 7: m = 128; break;
+      case 8: m = 150; break;
+      case 9: m = 200; break;
+      case 10: m = 250; break;
+      case 11: m = 300; break;
+      case 12: m = 350; break;
+      case 13: m = 400; break;
+      case 14: m = 450; break;
+      case 15: m = 500; break;
+      case 16: m = 550; break;
+      case 17: m = 600; break;
+      case 18: m = 650; break;
+  }
   pstopwatch sw = new_stopwatch();
-  start_stopwatch(sw);
-  
   /* ------------------------------------------------------------
    * Block-LR decomposition
    * ------------------------------------------------------------ */
+  C = new_diaghilbert_matrix(n);
+  B = new_diaghilbert_matrix(n);
   A = new_diaghilbert_matrix(n);
-  blocklr_decomp(A,m);  
-  //printf("Block decomp:\n");
-  //print_matrix(A);
-  del_matrix(A);
-  
-  printf("Duration of Block decomp: %f\n",stop_stopwatch(sw));
+
   start_stopwatch(sw);
+  blocklr_decomp(A,m);  
+//   printf("Block decomp:\n");
+//   print_matrix(A);
+  printf("Duration of Block decomp: %f\n",time1 = stop_stopwatch(sw));
+//   del_matrix(A);
+  
+//   if(m){
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
    * ------------------------------------------------------------ */
-  A = new_diaghilbert_matrix(n);
-  lr_decomp_blas(A);
-  //printf("BLAS decomp:\n");
-  //print_matrix(A);
-  del_matrix(A);
+//     A = new_diaghilbert_matrix(n);
+    start_stopwatch(sw);
+    lr_decomp_blas(B);
+//     printf("BLAS decomp:\n");
+//     print_matrix(B);
+      
+    printf("Duration of BLAS decomp: %f\n",time2 = stop_stopwatch(sw));
+//     del_matrix(A);
   
-  printf("Duration of BLAS decomp: %f\n",stop_stopwatch(sw));
-  start_stopwatch(sw);
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-  A = new_diaghilbert_matrix(n);
-  //lr_decomp(A);
-  //printf("Basic decomp:\n");
-  //print_matrix(A);
-  del_matrix(A);  
-  
-  printf("Duration of basic decomp: %f\n",stop_stopwatch(sw));
- 
-  
+  if(n < 4001){
+      if(m == 16){
+//     A = new_diaghilbert_matrix(n);
+    start_stopwatch(sw);
+    lr_decomp(C);
+//     printf("Basic decomp:\n");
+//     print_matrix(C);
+    printf("Duration of basic decomp: %f\n",time3 = stop_stopwatch(sw));
+    } 
+    //else time3 = 0.0;
+  }
+//   }
+  /* ------------------------------------------------------------
+   * test functioning
+   * ------------------------------------------------------------ */    
+    double *aa = A->a;
+    double *ba = B->a;
+    double err1 = 0.0;
+    for(int j = 0; j < n; j++){
+        for(int i = 0; i < n; i++){
+            err1 = (err1 < fabs(aa[i+j*n] - ba[i+j*n])) ? fabs(aa[i+j*n] - ba[i+j*n]) : err1;
+//             printf("index: %d\t errval: %f\t, relative err: %f\n",i+j*n,fabs(aa[i+j*n] - ba[i+j*n]),fabs(aa[i+j*n] - ba[i+j*n])/ba[i+j*n]);
+        }
+    }
+    printf("Error Value: %f\n",err1);
+    
+    
   /* cleaning up */
   del_stopwatch(sw);
+  del_matrix(A);
+  del_matrix(B);
+  del_matrix(C);
+  //del_matrix(asub);
+
+  if(f){
+      fprintf(f,"%d\t%f\t%f\t%f\n",m,time1,time2,time3);
+  }
+
+//   if(ctr){
+//     m = 50;
+//     ctr = 0;
+//   }
+//   else m += 50; 
+//   }
+//   
+
+  if(ctr <= max){
+      ctr++;
+      goto REPEAT;
+  }
   
+  if(f)  fclose(f);
   return EXIT_SUCCESS;
 }
