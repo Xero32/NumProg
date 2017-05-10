@@ -112,29 +112,18 @@ matrix_col(pmatrix a, int i){
 
 /* Submatrices 				*/
 
-pmatrix //TODO
+pmatrix 
 init_sub_matrix(pmatrix asub, pmatrix a, int rows, int roff, int cols, int coff){
-    
-//     asub->a = a->a+roff+coff*a->ld;
-//     asub->ld=a->ld;
-//     asub->rows = rows;
+//     matrix tmp;
+//     tmp = *asub;
+//     asub->ld = rows;
 //     asub->cols = cols;
-//     printf("matrix asub:\n");
-//     print_matrix(asub);
-//     
-//     printf("matrix a:\n");
-//     print_matrix(a);
-    double *A = a->a;
-    int lda = a->ld;
-    double *AS = asub->a;
-    for(int j = coff; j < cols+coff; j++){
-        for(int i = roff; i < rows+roff; i++){
-            int k = i - roff;
-            int m = j - coff;
-            AS[k+m*rows] = A[i+j*lda];
-        }
-    }
-    return asub;
+//     asub->rows = cols;
+    asub = new_matrix(rows,cols); //TODO
+    asub->ld = a->ld;
+    asub->a = a->a+roff+coff*(a->ld);
+   
+ return asub;
 }
 
 /* ------------------------------------------------------------

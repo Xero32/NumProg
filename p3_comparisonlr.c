@@ -3,7 +3,7 @@
 /* 	Serie 3 - Block-LR-Zerlegung und Vergleich	 	 */
 /* ------------------------------------------------------------- */
 /*	Autoren: 	Marvin Becker, Marko Hollm			 		 */
-/*	Versionsnummer:	1					 */
+/*	Versionsnummer:	2					 */
 /*---------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -45,20 +45,20 @@ lr_decomp(pmatrix a){
 
 static void
 lr_decomp_blas(pmatrix a){
-
+    int n = a->rows;
     int lda = a->ld;
     double *aa = a->a;
     int k;
-    for(k = 0; k < lda; k++){
+    for(k = 0; k < n; k++){
         assert(aa[k+k*lda]);
-        scal(lda-k-1, 1.0/aa[k+k*lda], a->a+k+1+k*lda, 1);
-        ger(lda-k-1, lda-k-1, -1.0,
+        scal(n-k-1, 1.0/aa[k+k*lda], a->a+k+1+k*lda, 1);
+        ger(n-k-1, n-k-1, -1.0,
             a->a+(k+1)+k*lda, 1, a->a+k+(k+1)*lda, lda,
             a->a+(k+1)+(k+1)*lda, lda);
     }
 }
 
-static void //TODO
+static void 
 block_lsolve(int n, int m, const real *L, int ldL, real *B, int ldB){
     int k;
     for(k=0; k<n; k++){
@@ -70,35 +70,29 @@ static void
 block_rsolve_trans(int n, int m, const real *R, int ldR, real *B, int ldB){
     int k;
     for(k=0; k<n; k++) {
+        assert(R[k+k*ldR]);
         scal(m, 1.0/R[k+k*ldR], B+k*ldB, 1);
         ger(m, n-k-1, -1.0, B+k*ldB, 1, R+k+(k+1)*ldR, ldR, B+(k+1)*ldB, ldB);
     }
 }
 
+
 static void
 blocklr_decomp(pmatrix a, int m){
+    matrix tmpsub;
     int i, j, k;
     int ldA = a->ld;
-    int n = a-> rows;
+    int n = a->rows;
     double *A = a->a;
     int oi, oj, ok, ni, nj, nk;
     
     for(k=0; k<m; k++) {
         ok = n * k / m; nk = n * (k+1) / m - ok;
-        pmatrix asub = new_matrix(nk,nk);
-        asub = init_sub_matrix(asub, a, nk, ok, nk, ok);
-        
-        lr_decomp_blas(asub);    
-        double *AS = asub->a;
+        assert(ok <= ldA);
+        assert(nk <= ldA);
 
-        for(j = ok; j < ok+nk; j++){
-            for(i = ok; i < ok+nk; i++){
-                int u = i-ok;
-                int v = j-ok;
-                A[i+j*ldA] = AS[u+v*nk];
-            }
-        }      
-        
+        lr_decomp_blas(init_sub_matrix(&tmpsub, a, nk, ok, nk, ok));       
+
         for(j=k+1; j<m; j++) {
             oj = n * j / m; nj = n * (j+1) / m - oj;
             block_lsolve(nk, nj, A+ok+ok*ldA, ldA, A+ok+oj*ldA, ldA);
@@ -111,8 +105,7 @@ blocklr_decomp(pmatrix a, int m){
             gemm(false, false, ni, nj, nk, -1.0,
             A+oi+ok*ldA, ldA, A+ok+oj*ldA, ldA, 1.0, A+oi+oj*ldA, ldA);
             }
-        }
-//      del_matrix(asub);        
+        }     
     }
 }
 
@@ -123,18 +116,20 @@ blocklr_decomp(pmatrix a, int m){
 
 int 
 main(void){
-
+//   matrix tmpsub;  //kein pointer; verwende dann init_sub(&tmpsub,a,...)
+//   pmatrix asub = &tmpsub;   //evtl
   int n;
   pmatrix A,B,C;
   real time1,time2,time3;
   int m;
   int max;
   FILE *f = NULL;
-  n = 2000;     /* matrix dimension */
-  m = 100;
+  n = 12;     /* matrix dimension */
+  m = 4;
   int ctr = 1;
   max = 0;
-				 
+		
+/* Part of reiteration functionality */
 // switch(n){
 //     case 1000: f = fopen("data1.dat","w"); max = 10; break;
 //     case 2000: f = fopen("data2.dat","w"); max = 11; break;
@@ -177,7 +172,9 @@ main(void){
   blocklr_decomp(A,m);  
 //   printf("Block decomp:\n");
 //   print_matrix(A);
-  printf("Duration of Block decomp: %f\n",time1 = stop_stopwatch(sw));
+  printf("Duration of Block decomp: %f\n",time1 = stop_stopwatch(sw));//         printf("inside BLAS fct\n");
+//         print_matrix(a);
+//         printf("n: %d, lda: %d, aa: %f, k: %d\n\n",n,lda,aa[k+k*lda],k);atch(sw));
   
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
@@ -192,7 +189,7 @@ main(void){
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-//   if(n < 4001){
+  if(n < 10){
 //       if(m == 16){
     start_stopwatch(sw);
     lr_decomp(C);
@@ -200,7 +197,7 @@ main(void){
 //     print_matrix(C);
     printf("Duration of basic decomp: %f\n",time3 = stop_stopwatch(sw));
 //     } 
-//   }
+  }
   /* ------------------------------------------------------------
    * test functioning
    * ------------------------------------------------------------ */    
@@ -210,7 +207,6 @@ main(void){
     for(int j = 0; j < n; j++){
         for(int i = 0; i < n; i++){
             err1 = (err1 < fabs(aa[i+j*n] - ba[i+j*n])) ? fabs(aa[i+j*n] - ba[i+j*n]) : err1;
-//             printf("index: %d\t errval: %f\t, relative err: %f\n",i+j*n,fabs(aa[i+j*n] - ba[i+j*n]),fabs(aa[i+j*n] - ba[i+j*n])/ba[i+j*n]);
         }
     }
     printf("Error Value: %f\n",err1);
@@ -230,7 +226,6 @@ main(void){
       ctr++;
 //       goto REPEAT;
   }
-  
   if(f)  fclose(f);
   return EXIT_SUCCESS;
 }
