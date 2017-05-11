@@ -16,7 +16,7 @@
 #include "miniblas.h"		/* our simple BLAS version */
 #include "matrix.h"		/* matrix functions */
 
-
+#define PDIM(f,n)   fprintf(f,"#matrix dimension: %d\n",n); printf("n: %d\n",n);
 /* older versions e.g. used in comparsion*/
 /* ************************************************* */
 
@@ -80,6 +80,7 @@ block_rsolve_trans(int n, int m, const real *R, int ldR, real *B, int ldB){
 static void
 blocklr_decomp(pmatrix a, int m){
     matrix tmpsub;
+    pmatrix psub;
     int i, j, k;
     int ldA = a->ld;
     int n = a->rows;
@@ -90,8 +91,8 @@ blocklr_decomp(pmatrix a, int m){
         ok = n * k / m; nk = n * (k+1) / m - ok;
         assert(ok <= ldA);
         assert(nk <= ldA);
-
-        lr_decomp_blas(init_sub_matrix(&tmpsub, a, nk, ok, nk, ok));       
+        psub = init_sub_matrix(&tmpsub, a, nk, ok, nk, ok);
+        lr_decomp_blas(psub);       
 
         for(j=k+1; j<m; j++) {
             oj = n * j / m; nj = n * (j+1) / m - oj;
@@ -116,91 +117,86 @@ blocklr_decomp(pmatrix a, int m){
 
 int 
 main(void){
-//   matrix tmpsub;  //kein pointer; verwende dann init_sub(&tmpsub,a,...)
-//   pmatrix asub = &tmpsub;   //evtl
+    
   int n;
   pmatrix A,B,C;
   real time1,time2,time3;
   int m;
   int max;
   FILE *f = NULL;
-  n = 12;     /* matrix dimension */
-  m = 4;
+  n = 1000;     /* matrix dimension */
+  m = 16;
   int ctr = 1;
   max = 0;
 		
 /* Part of reiteration functionality */
-// switch(n){
-//     case 1000: f = fopen("data1.dat","w"); max = 10; break;
-//     case 2000: f = fopen("data2.dat","w"); max = 11; break;
-//     case 3000: f = fopen("data3.dat","w"); max = 14; break;
-//     case 4000: f = fopen("data4.dat","w"); max = 17; break;
-//     case 5000: f = fopen("data5.dat","w"); max = 18; break;
-//     case 6000: f = fopen("data6.dat","w"); max = 18; break;
-// }
-// 
-//     REPEAT:
-//   switch(ctr){   /* number of matrix parts */
-// //       case 1: m = 16; break;
-//       case 2: m = n/100; break;
-//       case 3: m = 32; break;
-//       case 4: m = 50; break;
-//       case 5: m = 64; break;
-//       case 6: m = 100; break;
-//       case 7: m = 128; break;
-//       case 8: m = 150; break;
-//       case 9: m = 200; break;
-//       case 10: m = 250; break;
-//       case 11: m = 300; break;
-//       case 12: m = 350; break;
-//       case 13: m = 400; break;
-//       case 14: m = 450; break;
-//       case 15: m = 500; break;
-//       case 16: m = 550; break;
-//       case 17: m = 600; break;
-//       case 18: m = 650; break;
-//   }
+BEGIN:
+switch(n){
+    case 1000: f = fopen("data1.dat","w"); max = 10; PDIM(f,n); break;
+    case 2000: f = fopen("data2.dat","w"); max = 11; PDIM(f,n); break;
+    case 3000: f = fopen("data3.dat","w"); max = 14; PDIM(f,n); break;
+    case 4000: f = fopen("data4.dat","w"); max = 16; PDIM(f,n); break;
+    case 5000: f = fopen("data5.dat","w"); max = 17; PDIM(f,n); break;
+    case 6000: f = fopen("data6.dat","w"); max = 18; PDIM(f,n); break;
+    case 7000: if(f) fclose(f); return EXIT_SUCCESS;
+}
+
+    REPEAT:
+  switch(ctr){   /* number of matrix parts */
+      case 1: m = 16; break;
+      case 2: m = n/100; break;
+      case 3: m = 32; break;
+      case 4: m = 50; break;
+      case 5: m = 64; break;
+      case 6: m = 100; break;
+      case 7: m = 128; break;
+      case 8: m = 150; break;
+      case 9: m = 200; break;
+      case 10: m = 250; break;
+      case 11: m = 300; break;
+      case 12: m = 350; break;
+      case 13: m = 400; break;
+      case 14: m = 450; break;
+      case 15: m = 500; break;
+      case 16: m = 550; break;
+      case 17: m = 600; break;
+      case 18: m = 650; break;
+  }
   pstopwatch sw = new_stopwatch();
-  /* ------------------------------------------------------------
-   * Block-LR decomposition
-   * ------------------------------------------------------------ */
   C = new_diaghilbert_matrix(n);
   B = new_diaghilbert_matrix(n);
   A = new_diaghilbert_matrix(n);
-
+  /* ------------------------------------------------------------
+   * Block-LR decomposition
+   * ------------------------------------------------------------ */  
+  printf("Computing Block Decomp\n");
   start_stopwatch(sw);
   blocklr_decomp(A,m);  
-//   printf("Block decomp:\n");
-//   print_matrix(A);
-  printf("Duration of Block decomp: %f\n",time1 = stop_stopwatch(sw));//         printf("inside BLAS fct\n");
-//         print_matrix(a);
-//         printf("n: %d, lda: %d, aa: %f, k: %d\n\n",n,lda,aa[k+k*lda],k);atch(sw));
+  printf("Duration of Block decomp: %f\n",time1 = stop_stopwatch(sw));
   
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
    * ------------------------------------------------------------ */
+    printf("Computing BLAS Decomp\n");
     start_stopwatch(sw);
     lr_decomp_blas(B);
-//     printf("BLAS decomp:\n");
-//     print_matrix(B);
-      
-    printf("Duration of BLAS decomp: %f\n",time2 = stop_stopwatch(sw));
+    printf("Duration of BLAS decomp: %f\n\n",time2 = stop_stopwatch(sw));
   
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-  if(n < 10){
-//       if(m == 16){
+  if(n < 4001){
+      if(m == 16){
+    printf("Computing Basic Decomp\n");
     start_stopwatch(sw);
     lr_decomp(C);
-//     printf("Basic decomp:\n");
-//     print_matrix(C);
-    printf("Duration of basic decomp: %f\n",time3 = stop_stopwatch(sw));
-//     } 
+    printf("Duration of Basic Decomp: %f\n\n",time3 = stop_stopwatch(sw));
+    } 
   }
   /* ------------------------------------------------------------
    * test functioning
    * ------------------------------------------------------------ */    
+    printf("Calculating maximal difference between Block and BLAS Decomp\n");
     double *aa = A->a;
     double *ba = B->a;
     double err1 = 0.0;
@@ -209,7 +205,7 @@ main(void){
             err1 = (err1 < fabs(aa[i+j*n] - ba[i+j*n])) ? fabs(aa[i+j*n] - ba[i+j*n]) : err1;
         }
     }
-    printf("Error Value: %f\n",err1);
+    printf("Maximal Difference: %f\n\n",err1);
     
     
   /* cleaning up */
@@ -219,12 +215,18 @@ main(void){
   del_matrix(C);
 
   if(f){
-      fprintf(f,"%d\t%f\t%f\t%f\n",m,time1,time2,time3);
+      fprintf(f,"%d\t%f\t%f\t%f\t%f\n",m,time1,time2,time3,err1);
   }
 
-  if(ctr <= max){
+  if(ctr < max){
       ctr++;
-//       goto REPEAT;
+      goto REPEAT;
+  }
+  else {
+      n += 1000;
+      ctr = 1;
+      max = 0;
+      goto BEGIN;
   }
   if(f)  fclose(f);
   return EXIT_SUCCESS;
