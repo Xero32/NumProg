@@ -124,44 +124,44 @@ main(void){
   int m;
   int max;
   FILE *f = NULL;
-  n = 1000;     /* matrix dimension */
-  m = 16;
+  n = 2000;     /* matrix dimension */
+  m = 100;
   int ctr = 1;
   max = 0;
 		
 /* Part of reiteration functionality */
-BEGIN:
-switch(n){
-    case 1000: f = fopen("data1.dat","w"); max = 10; PDIM(f,n); break;
-    case 2000: f = fopen("data2.dat","w"); max = 11; PDIM(f,n); break;
-    case 3000: f = fopen("data3.dat","w"); max = 14; PDIM(f,n); break;
-    case 4000: f = fopen("data4.dat","w"); max = 16; PDIM(f,n); break;
-    case 5000: f = fopen("data5.dat","w"); max = 17; PDIM(f,n); break;
-    case 6000: f = fopen("data6.dat","w"); max = 18; PDIM(f,n); break;
-    case 7000: if(f) fclose(f); return EXIT_SUCCESS;
-}
-
-    REPEAT:
-  switch(ctr){   /* number of matrix parts */
-      case 1: m = 16; break;
-      case 2: m = n/100; break;
-      case 3: m = 32; break;
-      case 4: m = 50; break;
-      case 5: m = 64; break;
-      case 6: m = 100; break;
-      case 7: m = 128; break;
-      case 8: m = 150; break;
-      case 9: m = 200; break;
-      case 10: m = 250; break;
-      case 11: m = 300; break;
-      case 12: m = 350; break;
-      case 13: m = 400; break;
-      case 14: m = 450; break;
-      case 15: m = 500; break;
-      case 16: m = 550; break;
-      case 17: m = 600; break;
-      case 18: m = 650; break;
-  }
+// BEGIN:
+// switch(n){
+//     case 1000: f = fopen("data1.dat","w"); max = 10; PDIM(f,n); break;
+//     case 2000: f = fopen("data2.dat","w"); max = 11; PDIM(f,n); break;
+//     case 3000: f = fopen("data3.dat","w"); max = 14; PDIM(f,n); break;
+//     case 4000: f = fopen("data4.dat","w"); max = 16; PDIM(f,n); break;
+//     case 5000: f = fopen("data5.dat","w"); max = 17; PDIM(f,n); break;
+//     case 6000: f = fopen("data6.dat","w"); max = 18; PDIM(f,n); break;
+//     case 7000: if(f) fclose(f); return EXIT_SUCCESS;
+// }
+// 
+//     REPEAT:
+//   switch(ctr){   /* number of matrix parts */
+//       case 1: m = 16; break;
+//       case 2: m = n/100; break;
+//       case 3: m = 32; break;
+//       case 4: m = 50; break;
+//       case 5: m = 64; break;
+//       case 6: m = 100; break;
+//       case 7: m = 128; break;
+//       case 8: m = 150; break;
+//       case 9: m = 200; break;
+//       case 10: m = 250; break;
+//       case 11: m = 300; break;
+//       case 12: m = 350; break;
+//       case 13: m = 400; break;
+//       case 14: m = 450; break;
+//       case 15: m = 500; break;
+//       case 16: m = 550; break;
+//       case 17: m = 600; break;
+//       case 18: m = 650; break;
+//   }
   pstopwatch sw = new_stopwatch();
   C = new_diaghilbert_matrix(n);
   B = new_diaghilbert_matrix(n);
@@ -185,14 +185,14 @@ switch(n){
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-  if(n < 4001){
-      if(m == 16){
+//   if(n < 4001){
+//       if(m == 16){
     printf("Computing Basic Decomp\n");
     start_stopwatch(sw);
     lr_decomp(C);
     printf("Duration of Basic Decomp: %f\n\n",time3 = stop_stopwatch(sw));
-    } 
-  }
+//     } 
+//   }
   /* ------------------------------------------------------------
    * test functioning
    * ------------------------------------------------------------ */    
@@ -220,13 +220,13 @@ switch(n){
 
   if(ctr < max){
       ctr++;
-      goto REPEAT;
+//       goto REPEAT;
   }
   else {
       n += 1000;
       ctr = 1;
       max = 0;
-      goto BEGIN;
+//       goto BEGIN;
   }
   if(f)  fclose(f);
   return EXIT_SUCCESS;

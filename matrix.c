@@ -114,11 +114,7 @@ matrix_col(pmatrix a, int i){
 
 pmatrix 
 init_sub_matrix(pmatrix asub, pmatrix a, int rows, int roff, int cols, int coff){
-//     matrix tmp;
-//     tmp = *asub;
-//     asub->ld = rows;
-//     asub->cols = cols;
-//     asub->rows = cols;
+
     asub = new_matrix(rows,cols); //TODO
     asub->ld = a->ld;
     asub->a = a->a+roff+coff*(a->ld);
