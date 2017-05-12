@@ -185,7 +185,7 @@ main(void){
   /* ------------------------------------------------------------
    * first version of LR decomposition
    * ------------------------------------------------------------ */
-//   if(n < 4001){
+//   if(n < 5){
 //       if(m == 16){
     printf("Computing Basic Decomp\n");
     start_stopwatch(sw);

@@ -114,11 +114,10 @@ matrix_col(pmatrix a, int i){
 
 pmatrix 
 init_sub_matrix(pmatrix asub, pmatrix a, int rows, int roff, int cols, int coff){
-
-    asub = new_matrix(rows,cols); //TODO
-    asub->ld = a->ld;
-    asub->a = a->a+roff+coff*(a->ld);
-   
+     asub->ld=a->ld;
+     asub->rows=rows;
+     asub->cols=cols;
+     asub->a=a->a+roff+coff*a->ld;
  return asub;
 }
 
@@ -172,7 +171,6 @@ new_hilbert_matrix(int rows){
       aa[i+j*lda] = 1.0 / (1.0 + i + j);
     }
   }
-
   return a;
 }
 
