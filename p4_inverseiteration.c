@@ -15,7 +15,10 @@
 #include "miniblas.h"
 #include <time.h>
 
-
+#define EPSILON 0.01
+#define PRNTTD(Lm,Dm,Um,i) printf("L: %f\tD: %f\tU: %f\n",Lm[i],Dm[i],Um[i]);
+#define PRNTVC(bb,j) printf("%f, ",bb[j]);
+#define FOR for(i=0; i < n; i++)
 /* ------------------------------------------------------------
  * LR decomposition and solve
  * ------------------------------------------------------------ */
@@ -43,18 +46,19 @@ tridiag_lrsolve(const ptridiag a, pvector b){
     double* U = a->u;
     double* B = b->x;
     int n = a->rows;
+    int m = n-1;
     tridiag_lrdecomp(a);
     /* L_solve, Ly=b */
     for(int k = 0; k < n-1; k++){
         assert(L[k] && B[k]);
-        B[k+1] /= L[k]*B[k];
+        B[k+1] -= L[k]*B[k];
     }
     /* R_solve, Rx=y */
-    assert(D[n-1]);
-    B[n-1] /= D[n-1];                       //for(k = n; k-- > 0;) loop from n-1 to 0
-    for(int k = n-1; k-- > 1;){
+    assert(D[m]);
+    B[m] /= D[m];                       //for(k = n; k-- > 0;) loop from n-1 to 0
+    for(int k = m; k-- > 0;){
         assert(D[k-1]);
-        B[k-1] = (B[k-1] - B[k] * U[k-1]) / D[k-1];
+        B[k] = (B[k] - B[k+1] * U[k]) / D[k];
     }
 }
 
@@ -79,34 +83,37 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
    int n = x->rows;
    double normx;
    pvector y = new_zero_vector(n);
-   
    mvm_tridiag(0, 1, a, x, y);                                                  // y <- Ax
-   
+
    assert(dot(n, x->x, 1, x->x, 1));
    *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);           // lam <- x*y/x*x
-
-   axpy(n, -(*eigenvalue), x->x, 1, y->x, 1);                                   // y <- alpha x + y    with alpha = -lam   =>   y <- y - lam x
    
-   while(nrm2(n, y->x, 1) > *res * fabs(*eigenvalue) && ctr < steps){           // while ||y - lam x|| > eps lam   
+   assert(*eigenvalue);
+   scal(n, 1/fabs(*eigenvalue), y->x, 1);
+   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){           // while ||y - lam x|| > eps lam   
         /* alternatively one could try something like this: 
          *nrm(y - lam x) > eps lam <=> nrm(y/lam - x) > eps */
-
-        normx = nrm2(n,x->x,1);                                                 
+//         printf("ctr: %d, res: %f, x*y: %f, ev: %f, normx: %f\n",ctr,*res,dot(n,x->x,1,y->x,1),*eigenvalue,normx);
+        normx = nrm2(n,x->x,1); 
         assert(normx);
+        x = y;
         scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
 
         y = new_zero_vector(n);                                                 // set y as zero-vector again
+//         scal(n, fabs(*eigenvalue), y->x, 1);
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1)); // would assert(x->x); be enough? //TODO
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
-        
+
         ctr++;
         assert(*eigenvalue);
-        *res = nrm2(n, y->x, 1) / *eigenvalue;    //TODO how to use *res?
-   }   
-   del_vector(y);
+        scal(n, 1/fabs(*eigenvalue), y->x, 1);
+        *res = (norm2_diff_vector(x,y));
+//         *res = nrm2(n, y->x, 1) / *eigenvalue;    //TODO how to use *res?
+    }   
+   del_vector(y);   
 }
- 
+
  /* Note: 
    'shift' describes the parameter mu, used to compute (A - mu * I).
    */
@@ -124,31 +131,44 @@ inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, doub
    assert(dot(n, x->x, 1, x->x, 1));
    *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);           // lam <- x*y/x*x
    
-   axpy(n, -(*eigenvalue), x->x, 1, y->x, 1);                                   // y <- alpha x + y    with alpha = -lam   =>   y <- y - lam x
    ptridiag b = clone_tridiag(a);
-   
    double *Bd = b->d;
    for(int i = 0; i< n; i++){
         Bd[i] -= shift;                                                         // B <- A - my I
    }
-
-   while(nrm2(n, y->x, 1) > *res * fabs(*eigenvalue) && ctr < steps){                          // while ||y - lam x|| > eps lam
-        /* alternatively one could try something like this: 
-         * nrm(y - lam x) > eps lam <=> nrm(y/lam - x) > eps */
-        
+   
+   assert(*eigenvalue);
+   scal(n, 1/fabs(*eigenvalue), y->x, 1);
+//    double *X = x->x;
+//    double *Y = y->x;
+//    for(int i = 0; i < n; i++){
+//        printf("%f,  ",X[i]);
+//    }printf("X\n");
+//    for(int i = 0; i < n; i++){
+//        printf("%f,  ",Y[i]);
+//    }printf("Y\n\n");
+   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){                      // while ||y/lam - x|| > eps
+//         printf("ctr: %d, norm: %f, x*x: %f, ev: %f\n",ctr,*res,dot(n,x->x,1,x->x,1),*eigenvalue);
+//        printf("ctr: %d, res: %f, x*y: %f, ev: %f, normx: %f\n\n",ctr,*res,dot(n,x->x,1,y->x,1),*eigenvalue,normx);
         normx = nrm2(n,x->x,1);                                                 
         assert(normx);
-        tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x' <- x
-        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
+        tridiag_lrdecomp(b);
+        tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x <- x'
+        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
 
         y = new_zero_vector(n);                                                 // set y as zero-vector again
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1));
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
-        
+//         for(int i = 0; i < n; i++){
+//             printf("%f,  ",X[i]);
+//         }printf("X\n");
+
         ctr++;
         assert(*eigenvalue);
-        *res = nrm2(n, y->x, 1) / *eigenvalue;
+        scal(n, 1/fabs(*eigenvalue), y->x, 1);
+        *res = (norm2_diff_vector(x,y));
+            
    }   
    del_vector(y);
 }
@@ -160,43 +180,43 @@ inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, doub
 static void
 rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){
     //TODO
-   int ctr = 0;                                                                 // counter to keep track of iteration step
-   assert(a->rows == x->rows);  
-   int n = x->rows;
-   double normx;
-   pvector y = new_zero_vector(n);
+    int ctr = 0;                                                                // counter to keep track of iteration step
+    assert(a->rows == x->rows);  
+    int n = x->rows;
+    double normx;
+    pvector y = new_zero_vector(n);
    
-   mvm_tridiag(0, 1, a, x, y);                                                  // y <- Ax
-   assert(dot(n, x->x, 1, x->x, 1));
-   *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);           // lam <- x*y/x*x
+    mvm_tridiag(0, 1, a, x, y);                                                 // y <- Ax
+    assert(dot(n, x->x, 1, x->x, 1));
+    *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);          // lam <- x*y/x*x
    
-   axpy(n, -(*eigenvalue), x->x, 1, y->x, 1);                                   // y <- alpha x + y    with alpha = -lam   =>   y <- y - lam x
-   ptridiag b = clone_tridiag(a);
-//    del_vector(y);
-   double *Bd = b->d;
+    axpy(n, -(*eigenvalue), x->x, 1, y->x, 1);                                  // y <- alpha x + y    with alpha = -lam   =>   y <- y - lam x
+    ptridiag b = clone_tridiag(a);
+    double *Bd = b->d;
    
-
-   while(nrm2(n, x->x, 1) > *res * fabs(*eigenvalue) && ctr < steps){                          // while ||y - lam x|| > eps lam
+   while(nrm2(n, x->x, 1) > EPSILON * fabs(*eigenvalue) && ctr < steps){           // while ||y - lam x|| > eps lam
        /* alternatively one could try something like this: 
         * nrm(y - lam x) > eps lam <=> nrm(y/lam - x) > eps */
-       shift = *eigenvalue;                                                     // new in Rayleigh-Iteration: shift varies each time
-       for(int i = 0; i< n; i++){                                               // therefore we need to solve " B x' = (A - my I) x' = x " in each iteration    
+//         printf("ctr: %d, norm: %f, x*x: %f, ev: %f\n",ctr,*res,dot(n,x->x,1,x->x,1),*eigenvalue);
+        shift = *eigenvalue;                                                    // new in Rayleigh-Iteration: shift varies each time
+        for(int i = 0; i< n; i++){                                              // therefore we need to solve " B x' = (A - my I) x' = x " in each iteration    
             Bd[i] -= shift;                                                     // B <- A - my I
         }
-               
+                
         normx = nrm2(n,x->x,1);                                                 
         assert(normx);
         tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x' <- x
-        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
-
+        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; 
+                                                                                //                  ...only scaling with inverse of normx done here
         y = new_zero_vector(n);                                                 // set y as zero-vector again
-        mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
+        mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input is zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1));
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
         
         ctr++;
         assert(*eigenvalue);
-        *res = nrm2(n, y->x, 1) / *eigenvalue;
+        scal(n, 1/fabs(*eigenvalue), y->x, 1);
+        *res = (norm2_diff_vector(x,y));
    } 
    del_vector(y);
 }
@@ -214,7 +234,8 @@ main(void){
   int n;
   time_t t;
 
-  n = 100;
+  n = 100
+  ;
 
   time(&t);
   srand((unsigned int) t);
@@ -228,6 +249,14 @@ main(void){
    * Inverse iteration
    * ------------------------------------------------------------ */
 
+//   double *U,*D,*L;
+//   U = a->u;
+//   D = a->d;
+//   L = a->l;
+//   for(int i = 0; i < n; i++){
+//         printf("L: %f\tD: %f\tU: %f\n",L[i],D[i],U[i]);
+//   }
+  
   printf("Inverse iteration\n");
   lambda = 0.0;
   norm = 0.0;
@@ -271,7 +300,54 @@ main(void){
   del_vector(x);
   del_tridiag(a);	 
 
-
+  /* ------------------------------------------------------------
+   * Testing LR solve
+   * ------------------------------------------------------------ */
+// ptridiag M = new_threepointstencil(n); 
+// pvector b = new_zero_vector(n);
+// double *bb = b->x;
+// int i;
+// FOR{
+//     bb[i] = 10*(i+1);
+// } 
+// double *Um,*Dm,*Lm;
+//   Um = M->u;
+//   Dm = M->d;
+//   Lm = M->l;
+// FOR{
+//     PRNTTD(Lm,Dm,Um,i);
+// }
+// 
+// FOR{
+//     PRNTVC(bb,i);
+// }
+// printf("\n");
+// 
+// tridiag_lrsolve(M,b);
+// 
+// for(int j = 0; j < n; j++){
+//     printf("%f, ",bb[j]);
+// }
+// printf("\n");
+//   
+  
   return EXIT_SUCCESS;
 }
-   // nrm(y - lam x) > eps lam <=> nrm(y/lam - x) > eps;
+
+/*  EIGENVALUES calculated with octave:
+ * 
+    9.8027
+    38.4166
+    83.5237
+   141.4696
+   207.5598
+   276.4402
+   342.5304
+   400.4763
+   445.5834
+   474.1973
+   
+   It seems as though only last 2 (maybe 3) eigenvalues are found
+   by this algorithm
+   
+   */
