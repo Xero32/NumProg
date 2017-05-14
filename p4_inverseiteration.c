@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 4 - Eigenwertbestimmung (Inverse Iteration) 	 */
 /* ------------------------------------------------------------- */
-/*	Autoren:				 		 */
-/*	Versionsnummer:						 */
+/*	Autoren:	Marko Hollm, Marvin Becker			 		 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
 #include <assert.h>
@@ -15,7 +15,7 @@
 #include "miniblas.h"
 #include <time.h>
 
-#define EPSILON 0.01
+#define EPSILON 0.001
 #define PRNTTD(Lm,Dm,Um,i) printf("L: %f\tD: %f\tU: %f\n",Lm[i],Dm[i],Um[i]);
 #define PRNTVC(bb,j) printf("%f, ",bb[j]);
 #define FOR for(i=0; i < n; i++)
@@ -89,7 +89,7 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
    
    assert(*eigenvalue);
    scal(n, 1/fabs(*eigenvalue), y->x, 1);
-   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){           // while ||y - lam x|| > eps lam   
+   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){                      // while ||y - lam x|| > eps lam   
         normx = nrm2(n,x->x,1); 
         assert(normx);
         x = y;
@@ -139,11 +139,10 @@ inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, doub
 
         normx = nrm2(n,x->x,1);                                                 
         assert(normx);
-        tridiag_lrdecomp(b);
         tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x <- x'
         scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
         
-        y = new_zero_vector(n);                                                 // set y as zero-vector again
+        clear_vector(y);                                                        // set y as zero-vector again
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1));
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
@@ -185,11 +184,10 @@ rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigen
         for(int i = 0; i< n; i++){
             Bd[i] -= shift;                                                     // B <- A - my I
         }
-        tridiag_lrdecomp(b);
         tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x <- x'
         scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
         
-        y = new_zero_vector(n);                                                 // set y as zero-vector again
+        clear_vector(y);                                                        // set y as zero-vector again
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1));
         shift = *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
@@ -197,6 +195,7 @@ rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigen
         assert(*eigenvalue);
         scal(n, 1/fabs(*eigenvalue), y->x, 1);
         *res = (norm2_diff_vector(x,y));
+        del_tridiag(b);                                     //efficient?
    }   
    del_vector(y);
 }
@@ -214,8 +213,7 @@ main(void){
   int n;
   time_t t;
 
-  n = 100
-  ;
+  n = 100;
 
   time(&t);
   srand((unsigned int) t);
