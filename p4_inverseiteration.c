@@ -77,7 +77,6 @@ tridiag_lrsolve(const ptridiag a, pvector b){
 
 static void /* copied 'inverse_iteration_withshift' but removed all appearances of shift and auxiliary matrix B */
 inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *res){
-   int ctr = 0;                                                                 // counter to keep track of iteration step
    assert(a->rows == x->rows);  
    int n = x->rows;
    double normx;
@@ -89,11 +88,11 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
    
    assert(*eigenvalue);
    scal(n, 1/fabs(*eigenvalue), y->x, 1);
-   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){                      // while ||y - lam x|| > eps lam   
+   while(norm2_diff_vector(x,y) > EPSILON && steps-- > 0){                      // while ||y - lam x|| > eps lam   
         normx = nrm2(n,x->x,1); 
         assert(normx);
         x = y;
-        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
+        scal(n, 1.0/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
 
         y = new_zero_vector(n);                                                 // set y as zero-vector again
 //         scal(n, fabs(*eigenvalue), y->x, 1);
@@ -101,9 +100,8 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
         assert(dot(n, x->x, 1, x->x, 1)); // would assert(x->x); be enough? //TODO
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
 
-        ctr++;
         assert(*eigenvalue);
-        scal(n, 1/fabs(*eigenvalue), y->x, 1);
+        scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
         *res = (norm2_diff_vector(x,y)); //TODO how to use *res?
     }   
    del_vector(y);   
@@ -114,8 +112,7 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
    */
  
 static void
-inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){
-   int ctr = 0;                                                                 // counter to keep track of iteration step        
+inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){      
    assert(a->rows == x->rows);  
    int n = x->rows;
    double normx;
@@ -133,23 +130,22 @@ inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, doub
    }
    
    assert(*eigenvalue);
-   scal(n, 1/fabs(*eigenvalue), y->x, 1);
+   scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
 
-   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){                      // while ||y/lam - x|| > eps
+   while(norm2_diff_vector(x,y) > EPSILON && steps-- > 0){                      // while ||y/lam - x|| > eps
 
         normx = nrm2(n,x->x,1);                                                 
         assert(normx);
         tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x <- x'
-        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
+        scal(n, 1.0/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
         
         clear_vector(y);                                                        // set y as zero-vector again
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1));
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
 
-        ctr++;
         assert(*eigenvalue);
-        scal(n, 1/fabs(*eigenvalue), y->x, 1);
+        scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
         *res = (norm2_diff_vector(x,y));
    }   
    del_vector(y);
@@ -160,8 +156,7 @@ inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, doub
    */
 
 static void
-rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){
-   int ctr = 0;                                                                 // counter to keep track of iteration step        
+rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){        
    assert(a->rows == x->rows);  
    int n = x->rows;
    double normx;
@@ -173,9 +168,9 @@ rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigen
    *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);           // lam <- x*y/x*x
 
    assert(*eigenvalue);
-   scal(n, 1/fabs(*eigenvalue), y->x, 1);
+   scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
 
-   while(norm2_diff_vector(x,y) > EPSILON && ctr < steps){                      // while ||y/lam - x|| > eps
+   while(norm2_diff_vector(x,y) > EPSILON && steps-- > 0){                      // while ||y/lam - x|| > eps
 
         normx = nrm2(n,x->x,1);                                                 
         assert(normx);
@@ -185,15 +180,14 @@ rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigen
             Bd[i] -= shift;                                                     // B <- A - my I
         }
         tridiag_lrsolve(b,x); //lrdecomp already happens in lrsolve             // B x' = (A - my I) x' = x; write: x <- x'
-        scal(n, 1/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
+        scal(n, 1.0/normx, x->x, 1);                                              // x <- x' / ||x||; first part done above; only scaling with inverse of normx done here
         
         clear_vector(y);                                                        // set y as zero-vector again
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
         assert(dot(n, x->x, 1, x->x, 1));
         shift = *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
-        ctr++;
         assert(*eigenvalue);
-        scal(n, 1/fabs(*eigenvalue), y->x, 1);
+        scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
         *res = (norm2_diff_vector(x,y));
         del_tridiag(b);                                     //efficient?
    }   
