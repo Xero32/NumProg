@@ -40,13 +40,14 @@ tridiag_lrdecomp(ptridiag a){
 
 static void
 tridiag_lrsolve(const ptridiag a, pvector b){
-	
-    double* L = a->l;
-    double* D = a->d;
-    double* U = a->u;
+    assert(a->rows == b->rows);
+    ptridiag f = clone_tridiag(a);
+    double* L = f->l;
+    double* D = f->d;
+    double* U = f->u;
     double* B = b->x;
     int n = a->rows;
-    tridiag_lrdecomp(a);
+    tridiag_lrdecomp(f);
     /* L_solve, Ly=b */
     for(int k = 0; k < n-1; k++){
         assert(L[k] && B[k]);
@@ -60,6 +61,7 @@ tridiag_lrsolve(const ptridiag a, pvector b){
         assert(D[k]);
         B[k] = (B[k] - B[k+1] * U[k]) / D[k];
     }
+    del_tridiag(f);
 }
 
 /* ------------------------------------------------------------
@@ -91,9 +93,8 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
    while(norm2_diff_vector(x,y) > EPSILON && steps-- > 0){                      // while ||y - lam x|| > eps lam   
         normx = nrm2(n,x->x,1); 
         assert(normx);
-        x = y;
-        scal(n, 1.0/normx, x->x, 1);                                              // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
-
+        scal(n, 1.0/normx, x->x, 1);                                            // x <- x' / ||x||; first part done in line above; only scaling with inverse of normx done here
+        tridiag_lrsolve(a,x);
         y = new_zero_vector(n);                                                 // set y as zero-vector again
 //         scal(n, fabs(*eigenvalue), y->x, 1);
         mvm_tridiag(0, 1, a, x, y);                                             // y <- Ax; input zero-vec which to write to
@@ -104,7 +105,8 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
         scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
         *res = (norm2_diff_vector(x,y)); //TODO how to use *res?
     }   
-   del_vector(y);   
+   del_vector(y);  
+   printf("steps: %d\n",steps);
 }
 
  /* Note: 
@@ -146,9 +148,11 @@ inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, doub
 
         assert(*eigenvalue);
         scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
-        *res = (norm2_diff_vector(x,y));
+        
    }   
+   *res = (norm2_diff_vector(x,y));
    del_vector(y);
+   printf("steps: %d\n",steps);
 }
 
  /* Note: 
@@ -166,7 +170,7 @@ rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigen
    
    assert(dot(n, x->x, 1, x->x, 1));
    *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);           // lam <- x*y/x*x
-
+// ptridiag b = clone_tridiag(a);
    assert(*eigenvalue);
    scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
 
@@ -188,10 +192,12 @@ rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigen
         shift = *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
         assert(*eigenvalue);
         scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
-        *res = (norm2_diff_vector(x,y));
-        del_tridiag(b);                                     //efficient?
-   }   
+        del_tridiag(b);     //efficient?
+   }
+   *res = (norm2_diff_vector(x,y));
    del_vector(y);
+   printf("steps: %d\n",steps);
+   
 }
  
 /* ============================================================
@@ -246,7 +252,7 @@ main(void){
   printf("Inverse iteration with shift\n");
   lambda = 0.0;
   norm = 0.0;
-  mu = 7.0;
+  mu = 350.0;
   inverse_iteration_withshift(a, x, mu, 10, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
@@ -262,7 +268,7 @@ main(void){
   random_vector(x);
   lambda = 0.0;
   norm = 0.0;
-  mu = 7.0;
+  mu = 350.0;
   rayleigh_iteration(a, x, mu, 10, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
@@ -306,7 +312,7 @@ main(void){
   return EXIT_SUCCESS;
 }
 
-/*  EIGENVALUES calculated with octave:
+/*  EIGENVALUES calculated with octave for n = 10:
  * 
     9.8027
     38.4166
