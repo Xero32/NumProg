@@ -2,7 +2,7 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 3 - Block-LR-Zerlegung und Vergleich	 	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 	Marvin Becker, Marko Hollm			 		 */
+/*	Autoren: 	Marvin Becker, Marko Hollm		 */
 /*	Versionsnummer:	2					 */
 /*---------------------------------------------------------------*/
 
@@ -128,17 +128,17 @@ main(void){
   m = 100;
   int ctr = 1;
   max = 0;
-		
+  double err1 = 0.0;		
 /* Part of reiteration functionality */
 // BEGIN:
 // switch(n){
-//     case 1000: f = fopen("data1.dat","w"); max = 10; PDIM(f,n); break;
-//     case 2000: f = fopen("data2.dat","w"); max = 11; PDIM(f,n); break;
-//     case 3000: f = fopen("data3.dat","w"); max = 14; PDIM(f,n); break;
-//     case 4000: f = fopen("data4.dat","w"); max = 16; PDIM(f,n); break;
-//     case 5000: f = fopen("data5.dat","w"); max = 17; PDIM(f,n); break;
-//     case 6000: f = fopen("data6.dat","w"); max = 18; PDIM(f,n); break;
-//     case 7000: if(f) fclose(f); return EXIT_SUCCESS;
+//     case 1000: f = fopen("data10.dat","w"); max = 10; PDIM(f,n); break;
+//     case 2000: f = fopen("data20.dat","w"); max = 11; PDIM(f,n); break;
+//     case 3000: f = fopen("data30.dat","w"); max = 14; PDIM(f,n); break;
+//     case 4000: f = fopen("data40.dat","w"); max = 16; PDIM(f,n); break;
+//     case 5000: f = fopen("data50.dat","w"); max = 17; PDIM(f,n); break;
+//     case 6000: f = fopen("data60.dat","w"); max = 18; PDIM(f,n); break;
+//     case 7000: return EXIT_SUCCESS;
 // }
 // 
 //     REPEAT:
@@ -163,12 +163,13 @@ main(void){
 //       case 18: m = 650; break;
 //   }
   pstopwatch sw = new_stopwatch();
-  C = new_diaghilbert_matrix(n);
-  B = new_diaghilbert_matrix(n);
-  A = new_diaghilbert_matrix(n);
+  
+
+  
   /* ------------------------------------------------------------
    * Block-LR decomposition
    * ------------------------------------------------------------ */  
+  A = new_diaghilbert_matrix(n);
   printf("Computing Block Decomp\n");
   start_stopwatch(sw);
   blocklr_decomp(A,m);  
@@ -177,42 +178,50 @@ main(void){
   /* ------------------------------------------------------------
    * 'only' BLAS-LR decomposition
    * ------------------------------------------------------------ */
+//   if(ctr % 3 == 1){
+    B = new_diaghilbert_matrix(n);
     printf("Computing BLAS Decomp\n");
     start_stopwatch(sw);
     lr_decomp_blas(B);
     printf("Duration of BLAS decomp: %f\n\n",time2 = stop_stopwatch(sw));
-  
-  /* ------------------------------------------------------------
-   * first version of LR decomposition
-   * ------------------------------------------------------------ */
-//   if(n < 5){
-//       if(m == 16){
-    printf("Computing Basic Decomp\n");
-    start_stopwatch(sw);
-    lr_decomp(C);
-    printf("Duration of Basic Decomp: %f\n\n",time3 = stop_stopwatch(sw));
-//     } 
-//   }
+    
+    
   /* ------------------------------------------------------------
    * test functioning
    * ------------------------------------------------------------ */    
     printf("Calculating maximal difference between Block and BLAS Decomp\n");
     double *aa = A->a;
     double *ba = B->a;
-    double err1 = 0.0;
+    
     for(int j = 0; j < n; j++){
         for(int i = 0; i < n; i++){
             err1 = (err1 < fabs(aa[i+j*n] - ba[i+j*n])) ? fabs(aa[i+j*n] - ba[i+j*n]) : err1;
         }
     }
     printf("Maximal Difference: %f\n\n",err1);
+    del_matrix(B);
+//   }
+  /* ------------------------------------------------------------
+   * first version of LR decomposition
+   * ------------------------------------------------------------ */
+//   if(n < 4001 ){
+//       if(m == 16){
+    C = new_diaghilbert_matrix(n);
+    printf("Computing Basic Decomp\n");
+    start_stopwatch(sw);
+    lr_decomp(C);
+    printf("Duration of Basic Decomp: %f\n\n",time3 = stop_stopwatch(sw));
+    del_matrix(C);
+//     } 
+//   }
+
     
     
   /* cleaning up */
   del_stopwatch(sw);
   del_matrix(A);
-  del_matrix(B);
-  del_matrix(C);
+  
+
 
   if(f){
       fprintf(f,"%d\t%f\t%f\t%f\t%f\n",m,time1,time2,time3,err1);
@@ -226,8 +235,10 @@ main(void){
       n += 1000;
       ctr = 1;
       max = 0;
+//       if(f)  fclose(f);
 //       goto BEGIN;
   }
-  if(f)  fclose(f);
+//   del_matrix(B);
+//   if(f)  fclose(f);
   return EXIT_SUCCESS;
 }
