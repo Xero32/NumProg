@@ -321,8 +321,4 @@ main(void){
    400.4763
    445.5834
    474.1973
-   
-   It seems as though only last 2 (maybe 3) eigenvalues are found
-   by this algorithm
-   
    */
