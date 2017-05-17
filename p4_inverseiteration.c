@@ -101,9 +101,9 @@ inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *
         *eigenvalue = dot(n, x->x, 1, y->x, 1) / dot(n, x->x, 1, x->x, 1);      // lam <- x*y/x*x
 
         assert(*eigenvalue);
-        scal(n, 1.0/fabs(*eigenvalue), y->x, 1);
+        scal(n, 1.0/fabs(*eigenvalue), y->x, 1);                                // scaling for termination condition
     }   
-   *res = (norm2_diff_vector(x,y)) * *eigenvalue;  
+   *res = (norm2_diff_vector(x,y)) * *eigenvalue;                               // rescaling to get residual norm
    del_vector(y);  
    printf("steps: %d\n",steps);
 }
