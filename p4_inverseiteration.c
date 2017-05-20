@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 4 - Eigenwertbestimmung (Inverse Iteration) 	 */
 /* ------------------------------------------------------------- */
-/*	Autoren:	Ove Hansen und Tim Drevelow			 		 */
-/*	Versionsnummer:		1.0				 */
+/*	Autoren:				 	Ove Hansen, Tim Drevelow	 */
+/*	Versionsnummer:				2.0		 */
 /*---------------------------------------------------------------*/
 
 #include <assert.h>
@@ -14,16 +14,14 @@
 #include "matrix.h"
 #include "miniblas.h"
 #include <time.h>
-#define EPSILON 1.0e-006
 
 
 /* ------------------------------------------------------------
  * LR decomposition and solve
  * ------------------------------------------------------------ */
- 
+
 static void
 tridiag_lrdecomp(ptridiag a){
-	//Aufwand 3n
 	int i;
 	int n=a->rows;
 	double* l=a->l;
@@ -34,24 +32,23 @@ tridiag_lrdecomp(ptridiag a){
 		l[i]/=d[i];
 		d[i+1]-=l[i]*u[i];
 	}
-   
+  
 }
-	
-
 
 static void
 tridiag_lrsolve(const ptridiag a, pvector b){
-	//Aufwand 5n +3n=8n 
+	
+	//create clone of a, because should not be changed
 	ptridiag h=clone_tridiag(a);
+	assert(a->rows==b->rows);
 	
 	int i;
 	int n=h->rows;
-	double* l=h->l;
-	double* d=h->d;
-	double* u=h->u;
+	double* l=a->l;
+	double* d=a->d;
+	double* u=a->u;
 	double* x=b->x;
 	
-	tridiag_lrdecomp(h);
 	
 	//solve L*y=b
 	for(i=1; i<n; i++){
@@ -66,8 +63,9 @@ tridiag_lrsolve(const ptridiag a, pvector b){
 		x[i-1]=(x[i-1]-x[i]*u[i-1])/d[i-1];
 	}
 	
-	del_tridiag(h);
+  
 }
+
 
 /* ------------------------------------------------------------
  * inverse iteration
@@ -86,60 +84,65 @@ static void
 inverse_iteration(ptridiag a, pvector x, int steps, double *eigenvalue, double *res){
 	
 	int n=x->rows;
+	double nrmx;
+	ptridiag b;
 	
-	while(--steps>0){
-		double norm=nrm2(n, x->x,1);
-		tridiag_lrsolve(a,x);
-		scal(n,1.0/norm,x->x,1);
+	b=clone_tridiag(a);
+	tridiag_lrdecomp(b);
+	
+	while(steps-->0){
+		nrmx = nrm2(n, x->x,1);
+		assert(nrmx);
+		scal(n,1.0/nrmx,x->x,1);
+		tridiag_lrsolve(b,x);
 	}
 	
-	double norm=nrm2(n, x->x,1);
-	tridiag_lrsolve(a,x);
-	
+	nrmx = nrm2(n, x->x,1);
+	assert(nrmx);
+	scal(n,1.0/nrmx,x->x,1);
 	pvector y=new_zero_vector(n);
-	for(int i=0; i<n; i++){
-		y->x[i]=x->x[i];
-	}
+	mvm_tridiag(0, 1, a, x, y);
+	assert(dot(n, x->x, 1, x->x, 1));
+	*eigenvalue=dot(n, x->x, 1, y->x, 1);
+	axpy(n, -*eigenvalue,x->x, 1,y->x, 1);
+	*res=nrm2(n,y->x,1);
 	
-	scal(n,1.0/norm,y->x,1);
-	*eigenvalue=dot(n, x->x, 1, y->x, 1)/dot(n, x->x, 1, x->x, 1);
-	printf("Steps:%d\n",steps);
-	*res = fabs(nrm2(n, y->x, 1)/ *eigenvalue);
+	
 }
  
  /* Note: 
    'shift' describs the parameter mu, used to compute (A - mu * I).
    */
- 
 static void
 inverse_iteration_withshift(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){
 
-int n = x->rows,i;
 
-
-pvector y = new_zero_vector(n);
-mvm_tridiag(0, 1, a, x, y);
-*eigenvalue = dot(n, x->x, 1, y->x, 1)/dot(n, x->x, 1, x->x, 1);
-scal(n,1.0/ fabs(*eigenvalue),y->x,1); //
-ptridiag b = clone_tridiag(a);
-double* Bd = b->d;
-for(i=0 ; i < n; i++){
-	Bd[i] -= shift;
-}
-
-while(norm2_diff_vector(y,x)> EPSILON && steps-->0){
-	double normx = nrm2(n,x->x,1);
-	tridiag_lrsolve( b, x);	
-	scal(n,1.0/normx,x->x,1);
-	clear_vector(y);
+	int n=x->rows;
+	double nrmx;
+	int i;
+	ptridiag c=clone_tridiag(a);
+	for(i=0; i<n; i++) c->d[i]-=shift;
+	tridiag_lrdecomp(c);
+	
+	while(steps-->0){
+		nrmx = nrm2(n, x->x,1);
+		assert(nrmx);
+		scal(n,1.0/nrmx,x->x,1);
+		tridiag_lrsolve(c,x);
+	}
+	
+	nrmx = nrm2(n, x->x,1);
+	assert(nrmx);
+	scal(n,1.0/nrmx,x->x,1);
+	pvector y=new_zero_vector(n);
 	mvm_tridiag(0, 1, a, x, y);
 	assert(dot(n, x->x, 1, x->x, 1));
-	*eigenvalue = dot(n, x->x, 1, y->x, 1)/dot(n, x->x, 1, x->x, 1);
-	scal(n,1.0/fabs(*eigenvalue),y->x,1); //
-	//axpy( n, -*eigenvalue, x->x, 1, y->x, 1);
-}
-	printf("Steps:%d\n",steps);
-	*res = norm2_diff_vector(y,x); //
+	*eigenvalue=dot(n, x->x, 1, y->x, 1);
+	axpy(n, -*eigenvalue,x->x, 1,y->x, 1);
+	*res=nrm2(n,y->x,1);
+	
+	del_tridiag(c);
+
 }
 
  /* Note: 
@@ -149,42 +152,52 @@ while(norm2_diff_vector(y,x)> EPSILON && steps-->0){
 static void
 rayleigh_iteration(ptridiag a, pvector x, double shift, int steps, double *eigenvalue, double *res){
 
-int n = x->rows,i;
-
-pvector y = new_zero_vector(n);
-mvm_tridiag(0, 1, a, x, y);
-*eigenvalue = dot(n, x->x, 1, y->x, 1)/dot(n, x->x, 1, x->x, 1);
-scal(n,1.0/ fabs(*eigenvalue),y->x,1); //
-/*ptridiag b = clone_tridiag(a);
-double* Bd = b->d;
-for(i=0 ; i < n; i++){
-	Bd[i] -= shift;
-}*/
-
-while(norm2_diff_vector(y,x)> EPSILON && steps-->0){
-	ptridiag b = clone_tridiag(a);
-	double* Bd = b->d;
-	for(i=0 ; i < n; i++){
-		Bd[i] -= shift;
+	int i;
+	int n=x->rows;
+	double nrmx;
+	pvector y=new_vector(n);
+	ptridiag c=clone_tridiag(a);
+	
+	for(i=0; i<n; i++) c->d[i]-=shift;
+	nrmx = nrm2(n, x->x,1);
+	assert(nrmx);
+	scal(n,1.0/nrmx,x->x,1);
+	tridiag_lrdecomp(c);
+	tridiag_lrsolve(c,x);
+	
+	
+	while(steps-->0){
+		
+		nrmx = nrm2(n, x->x,1);
+		assert(nrmx);
+		scal(n,1.0/nrmx,x->x,1);		
+		clear_vector(y);
+		mvm_tridiag(0, 1, a, x, y);
+		assert(dot(n, x->x, 1, x->x, 1));
+		shift=dot(n, x->x, 1, y->x, 1);
+		
+		copy_tridiag(a,c);
+	    for(i=0; i<n; i++) c->d[i]-=shift;
+		
+		tridiag_lrdecomp(c);
+		tridiag_lrsolve(c,x);
+		
 	}
-	double normx = nrm2(n,x->x,1);
-	tridiag_lrsolve( b, x);
-	del_tridiag(b);
-	scal(n,1.0/normx,x->x,1);
+	del_tridiag(c);
+	
+	nrmx = nrm2(n, x->x,1);
+	assert(nrmx);
+	scal(n,1.0/nrmx,x->x,1);	
 	clear_vector(y);
 	mvm_tridiag(0, 1, a, x, y);
-	*eigenvalue = dot(n, x->x, 1, y->x, 1)/dot(n, x->x, 1, x->x, 1);
-	scal(n,1.0/fabs(*eigenvalue),y->x,1);
-	//ptridiag b = clone_tridiag(a);
-	shift = *eigenvalue;
-	//double* Bd = b->d;
-	//for(i=0 ; i < n; i++){
-	//Bd[i] -= shift;
-	//}
+	assert(dot(n, x->x, 1, x->x, 1));
+	*eigenvalue=dot(n, x->x, 1, y->x, 1);
+	axpy(n, -*eigenvalue,x->x, 1,y->x, 1);
+	*res=nrm2(n,y->x,1);
+	
+	
 }
-	printf("Steps:%d\n",steps);
-	*res = norm2_diff_vector(y,x);
-}
+
  
 /* ============================================================
  * Main program
@@ -199,7 +212,7 @@ main(void){
   int n;
   time_t t;
 
-  n = 100;
+  n = 1000;
 
   time(&t);
   srand((unsigned int) t);
@@ -215,7 +228,7 @@ main(void){
   printf("Inverse iteration\n");
   lambda = 0.0;
   norm = 0.0;
-  inverse_iteration(a, x, 20, &lambda, &norm);
+  inverse_iteration(a, x, 100, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
 	 "  Residual norm %e\n",
@@ -229,8 +242,8 @@ main(void){
   printf("Inverse iteration with shift\n");
   lambda = 0.0;
   norm = 0.0;
-  mu = 999.0;
-  inverse_iteration_withshift(a, x, mu, 20, &lambda, &norm);
+  mu = 7.0;
+  inverse_iteration_withshift(a, x, mu, 100, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
 	 "  Residual norm %e\n",
@@ -245,8 +258,8 @@ main(void){
   random_vector(x);
   lambda = 0.0;
   norm = 0.0;
-  mu = 999.0;
-  rayleigh_iteration(a, x, mu, 1000, &lambda, &norm);
+  mu = 7.0;
+  rayleigh_iteration(a, x, mu, 100, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
 	 "  Residual norm %e\n",
