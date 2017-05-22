@@ -228,7 +228,7 @@ main(void){
   printf("Inverse iteration\n");
   lambda = 0.0;
   norm = 0.0;
-  inverse_iteration(a, x, 100, &lambda, &norm);
+  inverse_iteration(a, x, 45, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
 	 "  Residual norm %e\n",
@@ -242,8 +242,8 @@ main(void){
   printf("Inverse iteration with shift\n");
   lambda = 0.0;
   norm = 0.0;
-  mu = 7.0;
-  inverse_iteration_withshift(a, x, mu, 100, &lambda, &norm);
+  mu = 3.0;
+  inverse_iteration_withshift(a, x, mu, 45, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
 	 "  Residual norm %e\n",
@@ -258,8 +258,8 @@ main(void){
   random_vector(x);
   lambda = 0.0;
   norm = 0.0;
-  mu = 7.0;
-  rayleigh_iteration(a, x, mu, 100, &lambda, &norm);
+  mu = 3.0;
+  rayleigh_iteration(a, x, mu, 45, &lambda, &norm);
 
   printf("  Eigenvalue %g\n"
 	 "  Residual norm %e\n",
