@@ -88,7 +88,7 @@ left_boundary_gridfunc1d(pgridfunc1d u_h, double t){
 	double *ux = u_h->x;
 
 		if(t - 0.25 < 0 && 0 < t){
-			ux[0] = sin(M_PI * (- t)*8.0);
+			ux[0] = 0.5 * sin(M_PI * (- t)*8.0);
 		}
 		else{
 			ux[0] = 0.0;
@@ -104,7 +104,7 @@ right_boundary_gridfunc1d(pgridfunc1d u_h, double t){
 	unsigned int n = g->n;
 
 		if(t - 0.25 < 0 && 0 < t){
-			ux[n+1] = sin(M_PI * (- t)*8.0);
+			ux[n+1] = 0.5 * sin(M_PI * (- t)*8.0);
 		}
 		else{
 			ux[n+1] = 0.0;

@@ -32,16 +32,18 @@
         double h = u_old->g->h;  // like this? 
 //         nv[0] = ov[0];
 //         nv[n+1] = ov[n+1];
-  
+//   left_boundary_gridfunc1d(u_new,t);
+        
+        for(int i = 1; i < n-1; i++){
+            nx[i] = ox[i] + 2.0 * delta * ov[i];
+        }
         if(lr == 'l'){
             left_boundary_gridfunc1d(u_new,t);
         }else if(lr == 'r'){
             right_boundary_gridfunc1d(u_new,t);
         }
         for(int i = 1; i < n-1; i++){
-            nx[i] = ox[i] + 2.0 * c / h / h * delta * ov[i];
+            nv[i] = ov[i] +  2.0 * c / h / h * delta * (nx[i-1] - 2.0 * nx[i] + nx[i+1]);
         }
-        for(int i = 1; i < n-1; i++){
-            nv[i] = ov[i] +  2.0 * c / h / h * delta * (ox[i-1] - 2.0 * ox[i] + ox[i+1]);
-        }
+        
 }	
