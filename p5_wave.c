@@ -29,7 +29,7 @@ unsigned int current = 0;		/* switch between grid functions */
 double data[2];				/* data 'c' and left or right wave */
 //data[1] = c;
 double t = 0.0;			/* time used to create a start wave */
-double delta = 0.05;				/* incremenet */
+double delta = 0.01;				/* incremenet */
 unsigned int step;			/* to find a good relation between increment size (therefore accuracy) 
  					   update rate for glut. */
 // delta = 0.05;
@@ -110,7 +110,7 @@ display_wave(){
 	
         double s = 0.0;
         for(int i = 0; i < n; i++){
-            s = (s < y[i]) ? y[i] : s;
+            s = (fabs(s) < fabs(y[i])) ? fabs(y[i]) : s;
         }
         
 	glBegin(GL_LINE_STRIP);
@@ -118,7 +118,7 @@ display_wave(){
 	  
 	for(int i=0; i<n; i++){
             color(0.0);
-            glVertex2f((double)i/(double)n * 2.0 - 1, 0.1*y[i]/s);
+            glVertex2f((double)i/(double)n * 2.0 - 1, 0.3*y[i]/s);
 	}
 	
 	glEnd();
@@ -132,7 +132,7 @@ display_wave(){
 	
         s = 0.0;
         for(int i = 0; i < n; i++){
-            s = (s < y[i]) ? y[i] : s;
+            s = (fabs(s) < fabs(y[i])) ? fabs(y[i]) : s;
         }
 	 
 	for(int i=0; i<n; i++){
@@ -199,14 +199,35 @@ timer_wave(int val){
 
 int
 main(int argc,char **argv){
-//   if(argc == 3){
-//     data[1] = *argv[1]; //c
-//     data[0] = *argv[0]; //lr
-//   }
-    data[1] = 0.01;
-    data[0] = 'l';
-    int n = 200;
+    data[1] = 0.15;
+    data[0] = 'l';                  // l = 108, r = 114
     
+    
+  if(argc == 4){
+    data[1] = atof(argv[2]);//c
+    printf("c: %f\n",data[1]);
+    data[0] = argv[1][0]; //lr
+    printf("lr: %f\n",data[0]);
+    delta = atof(argv[3]);
+    printf("delta: %f\n",delta);
+  }else if(argc == 2){
+      data[0] = argv[1][0]; //lr
+    printf("Usage info:\nChange the startpoint of the perturbation:\n\t 'l': left\n\t 'r': right\n\n");
+    printf("Change Hooke's constant c with second input value.\n");
+    printf("Note that for reasons unknown c cannot be higher than 0.015\n\n");
+    printf("Change Delta with third input value\nNote that for reasons unknown delta cannot be higher than 0.039\n\n");
+  }else{
+    data[1] = 0.15;
+    data[0] = 'l';                  // l = 108, r = 114 
+    printf("Usage info:\nChange the startpoint of the perturbation:\n\t 'l': left\n\t 'r': right\n\n");
+    printf("Change Hooke's constant c with second input value.\n");
+    printf("Note that for reasons unknown c cannot be higher than 0.015\n\n");
+    printf("Change Delta with third input value\nNote that for reasons unknown delta cannot be higher than 0.039\n\n");
+  }
+    
+    int n = 300;
+    if(data[1] > 0.015) data[1] = 0.02;
+    if(delta > 0.039) delta = 0.039;
     pgrid1d grid=new_grid1d(n);
 	
 	u[0]=new_gridfunc1d(grid);

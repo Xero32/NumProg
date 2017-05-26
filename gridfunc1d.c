@@ -112,3 +112,9 @@ right_boundary_gridfunc1d(pgridfunc1d u_h, double t){
 
 }
 
+
+
+
+// idea polynomial (x)^4 * (x-b)^4 * (x-b/2), where roots are at x=0, b/2, b
+// don't forget scaling
+// polynomial ought to be continuosly differentiable four times
