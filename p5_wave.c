@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 5 - Simulation Loesung der Wellengleichung 	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 						 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marko Hollm, Marvin Becker		 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
 		
@@ -28,7 +28,7 @@ int windowWidth, windowHeight;
 unsigned int current = 0;		/* switch between grid functions */
 double data[2];				/* data 'c' and left or right wave */
 double t = 2.0;			/* time used to create a start wave */
-double delta = 0.01;				/* incremenet */
+double delta = 0.01;				/* incremenent */
 unsigned int step;			/* to find a good relation between increment size (therefore accuracy) 
  					   update rate for glut. */
 unsigned int z = 1;
@@ -52,8 +52,7 @@ color(double coefficient){
 	glColor3f(coefficient,coefficient,coefficient);
 	  
 } 
-  
-  
+    
 /* and now... the content =)
    draw the string and the deflections, maybe with some nice colors
    and think about scaling !*/
@@ -90,7 +89,6 @@ display_wave(){
         }
         
 	glBegin(GL_LINE_STRIP);
-	
 	  
 	for(int i=0; i<n; i++){
             color(0.0);
@@ -169,7 +167,6 @@ key_wave(unsigned char key, int x, int y){
                                 t = 2.0;
                                 z = 1;
                                 
-                                
                                 glPushMatrix();
                                 glLoadIdentity();
                                 glBegin(GL_LINES);
@@ -189,9 +186,6 @@ key_wave(unsigned char key, int x, int y){
 	  }
 	  
 }
-
-  
-
   
 /* last but not least the main function 
    don't forget to set 'm' 'c' and the number
@@ -199,10 +193,8 @@ key_wave(unsigned char key, int x, int y){
 
 double
 f(double k, double delta){
-    return 0.065 * exp(-0.055 * k) - delta;
+    return 0.065 * exp(-0.055 * k) + 0.005;
 }
-
-
 
 int
 main(int argc,char **argv){
@@ -227,7 +219,7 @@ main(int argc,char **argv){
         printf("Change Hooke's constant 'c' with input value.\n");
         printf("Change time increment 'delta' with second input value.\n");
         printf("Change dimension 'n' with third input value.\n\n");
-        printf("For c and delta there is an exponential relation, which cannot be exceeded for the program to work properly.\n\n");
+        printf("Between c and delta there is an exponential relation, which cannot be exceeded for the simulation to work properly.\n\n");
         exit(EXIT_SUCCESS);
     }else{
         data[1] = atof(argv[1]);
@@ -241,11 +233,11 @@ main(int argc,char **argv){
     
     double k = 2.0 * data[1] * data[1] * (n+1.0) * (n+1.0) * delta;
     printf("f: %f\n",f(k,delta));
-    if( f(k,delta) <  (n - 206.67) / 15000.0 ){        // break condition for different n
+    if( f(k,delta) < delta ){        // break condition
             printf("Wrong ratio of delta and c chosen\nChoose lower values\n");
             exit(EXIT_SUCCESS);
     }
-    printf("Actual values:\n\tc: %f\tlr: %f\tdelta: %f\n",data[1],data[0],delta);
+
     pgrid1d grid=new_grid1d(n);
 	
 	u[0]=new_gridfunc1d(grid);
