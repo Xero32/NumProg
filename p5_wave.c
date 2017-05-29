@@ -28,10 +28,13 @@ int windowWidth, windowHeight;
 unsigned int current = 0;		/* switch between grid functions */
 double data[2];				/* data 'c' and left or right wave */
 //data[1] = c;
-double t = 0.0;			/* time used to create a start wave */
+double t = 2.0;			/* time used to create a start wave */
 double delta = 0.01;				/* incremenet */
+// smaller?
 unsigned int step;			/* to find a good relation between increment size (therefore accuracy) 
  					   update rate for glut. */
+unsigned int z = 1;
+
 // delta = 0.05;
 /* reshape function (simple 2D without frills!) */ 
 static void
@@ -42,12 +45,12 @@ reshape_wave(int width, int height){
     windowHeight=height;
 //     glMatrixMode(GL_PROJECTION);  // uncertain about use
     glLoadIdentity();
-    if(width > height){								
-       glScalef((double) height/width, 1.0, 1.0);
-    }
-    else{												
-       glScalef(1.0, (double) width/height, 1.0);
-    }	
+//     if(width > height){								
+//        glScalef((double) height/width, 1.0, 1.0);
+//     }
+//     else{												
+//        glScalef(1.0, (double) width/height, 1.0);
+//     }	
 }
  
  
@@ -67,35 +70,20 @@ color(double coefficient){
 static void
 display_wave(){
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-//     glClearColor(0.0,0.0,0.0,1.0);
-//     glPushMatrix();
-//     glBegin(GL_LINE_STRIP); 
-//     color(0.2);
-//     glColor3f(0.0,0.1,0.2);
-    
-//     double *y = u[current]->x;
-//     glutSolidTeapot(0.5);
-//     for(double j = 0; j <= 1.0; j+=0.07){
-//         glVertex2f(-0.5,j);
-//         glVertex2f(0.5,j);
-//         
-//         glVertex2f(-0.5,j);
-//         glVertex2f(0.5,-j);
-// }
-//        glVertex2f((double)2*(i/n) - 1, y[i]);     //scale!!!
-//        glColor3f(0.8,0.1,0.2);
-//     glEnd();
-    
-    //alternatively, Tim's for-loop:
-//     for(int i=0; i<=1.0; i+=0.07){
-// 	  glVertex2f(-0.9,i);
-// 	  glVertex2f(0.9,i);
-// 	  
-// 	  glVertex2f(-0.9,-i);
-// 	  glVertex2f(0.9,-i);
-// 	}
-//     
-    
+    glClearColor(0.3f,0.3f,0.3f,0.0f);
+    if(z){
+        glPushMatrix();
+        glLoadIdentity();
+        glBegin(GL_LINES);
+        color(1.0);
+            glVertex2f(-1.0,0.0);
+            color(1.0);
+            glVertex2f(1.0,0.0);
+            color(1.0);
+        glEnd();
+        glFlush();
+        glutSwapBuffers();
+    }
     
     /*-------------------------------------------------
 	*	 Draw current v
@@ -118,7 +106,7 @@ display_wave(){
 	  
 	for(int i=0; i<n; i++){
             color(0.0);
-            glVertex2f((double)i/(double)n * 2.0 - 1, 0.3*y[i]/s);
+            glVertex2f((double)i/(double)n * 2.0 - 1, 0.6*y[i]/s);
 	}
 	
 	glEnd();
@@ -137,13 +125,36 @@ display_wave(){
 	 
 	for(int i=0; i<n; i++){
             color(1.0); 
-            glVertex2f((double)i/(double)n * 2.0 - 1, 0.3*y[i]/s);
+            glVertex2f((double)i/(double)n * 2.0 - 1, 0.6*y[i]/s);
 	}
     
     glEnd();
     glFlush();
     glutSwapBuffers();
 }
+
+/* it's necessary to compute new values and redisplay them after a while....*/
+static void
+timer_wave(int val){
+    if(!current){
+        step_leapfrog1d_wave(u[0], v[0], u[1], v[1], t, delta, data);
+        current = 1;
+    }else{
+        step_leapfrog1d_wave(u[1], v[1], u[0], v[0], t, delta, data);
+        current = 0;
+    }
+    if(step == 3){
+        glutPostRedisplay();	
+        step = 0;
+    }
+    glutTimerFunc(15, timer_wave, 0);  
+
+    t += delta;
+    step++;
+//     printf("t: %f,\tz: %f\n",t,z);
+    
+}
+
   
 /* start new waves, leave and so on.... there are a lot of possibilities 
    Think about a way to change the start point for a new wave (left or right) 
@@ -162,6 +173,38 @@ key_wave(unsigned char key, int x, int y){
 	  case 27 :
 				exit (EXIT_SUCCESS);
 				break;
+          case 'l':             //left_boundary   
+                                data[0] = 'l';
+                                t = 0.0;
+                                z = 0;
+                                printf("LEFT\n");
+                                break;
+          case 'r':             //right_boundary
+                                data[0] = 'r';
+                                t = 0.0;
+                                z = 0;
+                                printf("RIGHT\n");
+                                break;
+          case 'z':             zero_gridfunc1d(u[current]);
+                                zero_gridfunc1d(v[current]);
+                                t = 2.0;
+                                z = 1;
+                                
+                                
+                                glPushMatrix();
+                                glLoadIdentity();
+                                glBegin(GL_LINES);
+                                    color(1.0);
+                                    glVertex2f(-1.0,0.0);
+                                    color(1.0);
+                                    glVertex2f(1.0,0.0);
+                                color(1.0);
+                                glEnd();
+                                printf("ZERO\n");
+                                glFlush();
+                                glutSwapBuffers();
+
+                                break;
 	  default :
 				break;	 		
 	  }
@@ -169,65 +212,58 @@ key_wave(unsigned char key, int x, int y){
 }
 
   
-/* it's necessary to compute new values and redisplay them after a while....*/
-static void
-timer_wave(int val){
-    if(!current){
-        step_leapfrog1d_wave(u[0], v[0], u[1], v[1], t, delta, data);
-        current = 1;
-    }else{
-        step_leapfrog1d_wave(u[1], v[1], u[0], v[0], t, delta, data);
-        current = 0;
-    }
-//     printf
-    if(step == 5){
-        glutPostRedisplay();	
-        step = 0;
-    }
-    glutTimerFunc(15, timer_wave, 0);  
 
-    t += delta / 10.0;
-    step++;
-//     printf("t: %f,\tz: %f\n",t,z);
-    
-}
   
 /* last but not least the main function 
    don't forget to set 'm' 'c' and the number
    of points 'n' */   
 
+double
+f(double k, double delta){
+    return 0.065 * exp(-0.055 * k) + 0.007 - delta;
+}
+
+
 
 int
 main(int argc,char **argv){
     data[1] = 0.15;
-    data[0] = 'l';                  // l = 108, r = 114
     
-    
-  if(argc == 4){
-    data[1] = atof(argv[2]);//c
+  if(argc == 3){
+    data[1] = atof(argv[1]);//c
     printf("c: %f\n",data[1]);
-    data[0] = argv[1][0]; //lr
-    printf("lr: %f\n",data[0]);
-    delta = atof(argv[3]);
+    delta = atof(argv[2]);
     printf("delta: %f\n",delta);
   }else if(argc == 2){
-      data[0] = argv[1][0]; //lr
-    printf("Usage info:\nChange the startpoint of the perturbation:\n\t 'l': left\n\t 'r': right\n\n");
-    printf("Change Hooke's constant c with second input value.\n");
-    printf("Note that for reasons unknown c cannot be higher than 0.015\n\n");
-    printf("Change Delta with third input value\nNote that for reasons unknown delta cannot be higher than 0.039\n\n");
+//       printf("CHECK\n");
+      data[0] = argv[1][0];
+//       printf("data: %f\n",data[0]);
+    if(data[0] == 0x68){
+        printf("Usage info:\nSet perturbation on either left or right end by pressing:\n\t 'l': left\n\t 'r': right\n\n");
+        printf("You can reset the wave by pressing 'z'\nResetting may not work properly at first try.\nIn that case press 'z' repeatedly.\n\n");
+        printf("Change Hooke's constant 'c' with input value.\n");
+        printf("Change time increment 'delta' with second input value.\n\n");
+        printf("For c and delta there is an exponential relation, which cannot be exceeded for the program to work properly.\n\n");
+        
+        exit(EXIT_SUCCESS);
+    }else{
+        data[1] = atof(argv[1]);
+        printf("c: %f\n",data[1]);
+    }
   }else{
-    data[1] = 0.15;
-    data[0] = 'l';                  // l = 108, r = 114 
-    printf("Usage info:\nChange the startpoint of the perturbation:\n\t 'l': left\n\t 'r': right\n\n");
-    printf("Change Hooke's constant c with second input value.\n");
-    printf("Note that for reasons unknown c cannot be higher than 0.015\n\n");
-    printf("Change Delta with third input value\nNote that for reasons unknown delta cannot be higher than 0.039\n\n");
+        data[0] = 'l';
+        data[1] = 0.1;
+        delta = 0.007;
   }
     
     int n = 300;
-    if(data[1] > 0.015) data[1] = 0.02;
-    if(delta > 0.039) delta = 0.039;
+    double k = 2.0 * data[1] * data[1] * (n+1.0) * (n+1.0) * delta;
+    printf("f: %f\n",f(k,delta));
+    if( f(k,delta) <  0 ){
+            printf("Wrong ratio of delta and c chosen\nChoose lower values\n");
+            exit(EXIT_SUCCESS);
+    }
+    printf("Actual values:\n\tc: %f\tlr: %f\tdelta: %f\n",data[1],data[0],delta);
     pgrid1d grid=new_grid1d(n);
 	
 	u[0]=new_gridfunc1d(grid);
@@ -255,7 +291,7 @@ main(int argc,char **argv){
   
   glutDisplayFunc(display_wave);
 //   glClearColor(0.3f,0.3f,0.3f,0.0f);
-  
+  zero_gridfunc1d(u[current]);
   glutKeyboardFunc(key_wave);
   glutTimerFunc(50, timer_wave, 0);
   glutMainLoop();

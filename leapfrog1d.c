@@ -8,8 +8,8 @@
 
   #include <assert.h>		
   #include "gridfunc1d.h"
-  #include "leapfrog1d.h"		
-  
+  #include "leapfrog1d.h"		 
+  #include <stdio.h>
 
 /* Note:
     -'t' time value
@@ -29,13 +29,11 @@
         int n = u_old->d;
         double c = ((double*)data)[1]; // make sure c is saved in data[1]
         double lr = ((double*)data)[0];
-        double h = u_old->g->h;  // like this? 
-//         nv[0] = ov[0];
-//         nv[n+1] = ov[n+1];
-//   left_boundary_gridfunc1d(u_new,t);
-        
+        double h = u_old->g->h; 
+        double k = 2.0 * c * c / h / h * delta;
         for(int i = 1; i < n-1; i++){
             nx[i] = ox[i] + 2.0 * delta * ov[i];
+
         }
         if(lr == 'l'){
             left_boundary_gridfunc1d(u_new,t);
@@ -43,7 +41,20 @@
             right_boundary_gridfunc1d(u_new,t);
         }
         for(int i = 1; i < n-1; i++){
-            nv[i] = ov[i] +  2.0 * c / h / h * delta * (nx[i-1] - 2.0 * nx[i] + nx[i+1]);
+            nv[i] = ov[i] +  k * (nx[i-1] - 2.0 * nx[i] + nx[i+1]);
+
         }
         
+        
+
+/*        FILE *f = fopen("checkfl7.txt","a");
+        if(f){
+            f = fopen("checkfl7.txt","a");
+            for(int i = 0; i < n; i += 5){
+                if(nx[i] && nv[i]) fprintf(f,"%f\t%f\n",nx[i],nv[i]);
+            }
+            fprintf(f,"\ntime: %f\tnewline\n\n",t);
+            
+        }
+        if(f) fclose(f);   */     
 }	

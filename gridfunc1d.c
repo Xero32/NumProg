@@ -82,33 +82,66 @@ zero_gridfunc1d(pgridfunc1d u_h){
 	
   }
 
+// void
+// left_boundary_gridfunc1d(pgridfunc1d u_h, double t){
+// 
+// 	double *ux = u_h->x;
+// 
+// 		if(t - 0.25 < 0 && 0 < t){
+// 			ux[0] = 0.5 * sin(M_PI * (- t)*8.0);
+// 		}
+// 		else{
+// 			ux[0] = 0.0;
+// 		}
+// 
+// }
+
+// void
+// right_boundary_gridfunc1d(pgridfunc1d u_h, double t){
+// 
+//  	pcgrid1d g = u_h->g;
+// 	double *ux = u_h->x;
+// 	unsigned int n = g->n;
+// 
+// 		if(t - 0.25 < 0 && 0 < t){
+// 			ux[n+1] = 0.5 * sin(M_PI * (- t)*8.0);
+// 		}
+// 		else{
+// 			ux[n+1] = 0.0;
+// 		}
+// 
+// }
 void
 left_boundary_gridfunc1d(pgridfunc1d u_h, double t){
-
-	double *ux = u_h->x;
-
-		if(t - 0.25 < 0 && 0 < t){
-			ux[0] = 0.5 * sin(M_PI * (- t)*8.0);
-		}
-		else{
-			ux[0] = 0.0;
-		}
-
+    
+//     pcgrid1d g = u_h->g;
+    double *ux = u_h->x;
+//     unsigned int n = g->n;
+    double b = 1.0;
+    
+        if(t - b < 0 && 0 < t){
+            ux[0] = t*t*t*t*(t-b)*(t-b)*(t-b)*(t-b)*(t-b/2)*1.0;
+        }else{
+            ux[0] = 0.0;
+        }
 }
 
-void
+
+
+void 
 right_boundary_gridfunc1d(pgridfunc1d u_h, double t){
 
  	pcgrid1d g = u_h->g;
 	double *ux = u_h->x;
 	unsigned int n = g->n;
+	double b=1.0;
 
-		if(t - 0.25 < 0 && 0 < t){
-			ux[n+1] = 0.5 * sin(M_PI * (- t)*8.0);
-		}
-		else{
+		if(t - b < 0 && 0 < t){
+			ux[n+1] = t*t*t*t*(t-b)*(t-b)*(t-b)*(t-b)*(t-b/2)*1.0;
+		}else{
 			ux[n+1] = 0.0;
 		}
+// 		printf("check!\n");
 
 }
 
