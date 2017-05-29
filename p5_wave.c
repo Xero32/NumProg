@@ -27,15 +27,12 @@ pgridfunc1d u[2], v[2];
 int windowWidth, windowHeight;
 unsigned int current = 0;		/* switch between grid functions */
 double data[2];				/* data 'c' and left or right wave */
-//data[1] = c;
 double t = 2.0;			/* time used to create a start wave */
 double delta = 0.01;				/* incremenet */
-// smaller?
 unsigned int step;			/* to find a good relation between increment size (therefore accuracy) 
  					   update rate for glut. */
 unsigned int z = 1;
 
-// delta = 0.05;
 /* reshape function (simple 2D without frills!) */ 
 static void
 reshape_wave(int width, int height){
@@ -43,14 +40,8 @@ reshape_wave(int width, int height){
     glViewport(0, 0, width, height);
     windowWidth=width;
     windowHeight=height;
-//     glMatrixMode(GL_PROJECTION);  // uncertain about use
-    glLoadIdentity();
-//     if(width > height){								
-//        glScalef((double) height/width, 1.0, 1.0);
-//     }
-//     else{												
-//        glScalef(1.0, (double) width/height, 1.0);
-//     }	
+    glMatrixMode(GL_PROJECTION);  // uncertain about use
+    glLoadIdentity();	
 }
  
  
@@ -88,10 +79,7 @@ display_wave(){
     /*-------------------------------------------------
 	*	 Draw current v
 	*--------------------------------------------------*/
-//         int n = u[0]->d;
-	
-	
-// 	/*
+
 	pgridfunc1d vel=v[current];
 	double* y=vel->x;
         int n=vel->d;
@@ -110,7 +98,6 @@ display_wave(){
 	}
 	
 	glEnd();
-// 	*/
 	
 	pgridfunc1d pos=u[current];
 	y=pos->x;
@@ -150,9 +137,7 @@ timer_wave(int val){
     glutTimerFunc(15, timer_wave, 0);  
 
     t += delta;
-    step++;
-//     printf("t: %f,\tz: %f\n",t,z);
-    
+    step++;    
 }
 
   
@@ -162,13 +147,7 @@ timer_wave(int val){
 static void
 key_wave(unsigned char key, int x, int y){	
 	(void) x;
-	(void) y;
-	
-	/*Beschreibung, welche Folgen das 
-	Druecken einer Taste hat.
-	Hier: 'esc' fuehrt zum Beenden (Fenster wird
-	geschlossen)
-	Alles andere hat keine Wirkung!*/	
+	(void) y;	
 	  switch (key){
 	  case 27 :
 				exit (EXIT_SUCCESS);
@@ -220,31 +199,35 @@ key_wave(unsigned char key, int x, int y){
 
 double
 f(double k, double delta){
-    return 0.065 * exp(-0.055 * k) + 0.007 - delta;
+    return 0.065 * exp(-0.055 * k) - delta;
 }
 
 
 
 int
 main(int argc,char **argv){
-    data[1] = 0.15;
-    
+  int n = 300;  
   if(argc == 3){
     data[1] = atof(argv[1]);//c
     printf("c: %f\n",data[1]);
     delta = atof(argv[2]);
     printf("delta: %f\n",delta);
+  }else if(argc == 4){
+    data[1] = atof(argv[1]);//c
+    printf("c: %f\n",data[1]);
+    delta = atof(argv[2]);
+    printf("delta: %f\n",delta);  
+    n = (int)atof(argv[3]);
+    printf("n: %d\n",n);      
   }else if(argc == 2){
-//       printf("CHECK\n");
       data[0] = argv[1][0];
-//       printf("data: %f\n",data[0]);
     if(data[0] == 0x68){
         printf("Usage info:\nSet perturbation on either left or right end by pressing:\n\t 'l': left\n\t 'r': right\n\n");
         printf("You can reset the wave by pressing 'z'\nResetting may not work properly at first try.\nIn that case press 'z' repeatedly.\n\n");
         printf("Change Hooke's constant 'c' with input value.\n");
-        printf("Change time increment 'delta' with second input value.\n\n");
+        printf("Change time increment 'delta' with second input value.\n");
+        printf("Change dimension 'n' with third input value.\n\n");
         printf("For c and delta there is an exponential relation, which cannot be exceeded for the program to work properly.\n\n");
-        
         exit(EXIT_SUCCESS);
     }else{
         data[1] = atof(argv[1]);
@@ -253,13 +236,12 @@ main(int argc,char **argv){
   }else{
         data[0] = 'l';
         data[1] = 0.1;
-        delta = 0.007;
+        delta = 0.01;
   }
     
-    int n = 300;
     double k = 2.0 * data[1] * data[1] * (n+1.0) * (n+1.0) * delta;
     printf("f: %f\n",f(k,delta));
-    if( f(k,delta) <  0 ){
+    if( f(k,delta) <  (n - 206.67) / 15000.0 ){        // break condition for different n
             printf("Wrong ratio of delta and c chosen\nChoose lower values\n");
             exit(EXIT_SUCCESS);
     }
@@ -276,21 +258,17 @@ main(int argc,char **argv){
 	v[1]=new_gridfunc1d(grid);
 	zero_gridfunc1d(v[1]);
 	
-    
-// color(0.0);
-// key_wave('s',1,2);
   glutInit(&argc, argv);
   
   glutCreateWindow("Wave");
   
   glutPositionWindow(150, 100);
   
-  glutReshapeWindow(600, 600);
+  glutReshapeWindow(1000, 600);
   glClearColor(0.5f, 0.5f, 0.9f, 0.0f);	
   glutReshapeFunc(reshape_wave);
   
   glutDisplayFunc(display_wave);
-//   glClearColor(0.3f,0.3f,0.3f,0.0f);
   zero_gridfunc1d(u[current]);
   glutKeyboardFunc(key_wave);
   glutTimerFunc(50, timer_wave, 0);
