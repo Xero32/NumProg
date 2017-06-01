@@ -29,22 +29,23 @@
 psurface3d sur0,sur1; 
 real x0 = -2.0, y0 = 0.0, z0 = -3.0; //coordinates of mesh
 real x1 = 2.0, y1 = 2.0, z1 = -10.0; //coordinates of solid
+real x = 0.0, y = 0.0, z = 0.0;
 // real xtr,ytr,ztr; // x-translation, y-translation, z-translation aka zoom
 real rotatex,rotatey;
 int k = 0;
 /* Translation */
 
-// static void
-// translate(double x, double y, double z){
-//     glLoadIdentity();
-//     glPushMatrix();
-//     
+static void
+translate(double x, double y, double z){
+    glLoadIdentity();
+    glPushMatrix();
+    
 //     glTranslatef(x,y,z);
-//     
-// //     double tr[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1};
-// //     glMultMatrixd(tr);
-//     glutPostRedisplay();
-// }
+    
+    double tr[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1};
+    glMultMatrixd(tr);
+    glutPostRedisplay();
+}
 
 /* Rotation around x-axis */
 // static void
@@ -98,7 +99,7 @@ display_mesh(){
     
 //     glPopMatrix();
     glBegin(GL_LINES);
-    glMatrixMode(GL_MODELVIEW);
+    glMatrixMode(GL_PROJECTION);
 //     glPushMatrix();
     glTranslatef(x0,y0,z0);
     glColor3f(1.0,1.0,1.0);
@@ -164,8 +165,7 @@ GLfloat p[4],a[4],d[4];
     
     printf("RESHAPE\n");
     gluPerspective(35.0, 1.0, 1.0, 30.0);
-
-    glTranslatef(0.0, 0.0, -5.0);
+    glTranslatef(x=0.0, y=0.0, z=-5.0);
 //     translate(xtr,ytr,ztr);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();	
@@ -219,12 +219,20 @@ static void
 key_mesh(unsigned char key, int x, int y){
 
     switch (key){
-        case 'd': x0+=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
-        case 'a': x0-=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
-        case 's': y0-=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
-        case 'w': y0+=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
-        case 0x2B: z0+=0.1; printf("ztr: %f\n",z0);glutSwapBuffers(); glutPostRedisplay();break; // '+' key
-        case 0x2D: z0-=0.1; printf("ztr: %f\n",z0);glutSwapBuffers(); glutPostRedisplay();break; // '-' key
+        case 'd': translate(x0+=0.05,y0,z0); break;
+        case 'a': translate(x0-=0.05,y0,z0); break;
+        case 'w': translate(x0,y0+=0.05,z0); break;
+        case 's': translate(x0,y0-=0.05,z0); break;
+        case 0x02B: translate(x0,y0,z0+=0.05); printf("ZOOM IN\n");break;
+        case 0x02D: translate(x0,y0,z0-=0.05); printf("ZOOM OUT\n");break;
+        
+//         case 'd': x0+=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
+//         case 'a': x0-=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
+//         case 's': y0-=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
+//         case 'w': y0+=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
+//         case 0x2B: z0+=0.1; printf("ztr: %f\n",z0);glutSwapBuffers(); glutPostRedisplay();break; // '+' key
+//         case 0x2D: z0-=0.1; printf("ztr: %f\n",z0);glutSwapBuffers(); glutPostRedisplay();break; // '-' key
+        case 27: exit(EXIT_SUCCESS);
     }
 }
 
