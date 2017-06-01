@@ -31,9 +31,18 @@ real x0 = -2.0, y0 = 0.0, z0 = -3.0; //coordinates of mesh
 real x1 = 2.0, y1 = 2.0, z1 = -10.0; //coordinates of solid
 real x = 0.0, y = 0.0, z = 0.0;
 // real xtr,ytr,ztr; // x-translation, y-translation, z-translation aka zoom
-real rotatex,rotatey;
+real rx,ry;
 int k = 0;
 /* Translation */
+
+static void
+Printhelp(){
+    printf("Usage Info:\n Use Keyboard to move, zoom, and rotate objects.\n\n");
+    printf("Use 'w', 'a', 's', 'd' to move object.\n Zoom in with '+', zoom out with '-'\n");
+    printf("Rotate around the x axis by pressing 'r' and 'f'\n");
+    printf("Rotate around the y axis by pressing 'q' and 'e'\n");
+}
+
 
 static void
 translate(double x, double y, double z){
@@ -48,38 +57,25 @@ translate(double x, double y, double z){
 }
 
 /* Rotation around x-axis */
-// static void
-// rotate_x(double alpha){
-// 
-//   /* ---------------------------------------------- */ 
-//   /*                                                */
-//   /* T T T T T     O O       D D           O O      */
-//   /*     T        O   O      D   D        O   O     */
-//   /*     T       O     O     D     D     O     O    */ 
-//   /*     T       O     O     D     D     O     O    */ 
-//   /*     T        O   O      D   D        O   O     */
-//   /*     T         O O       D D           O O      */
-//   /*                                                */ 
-//   /* ---------------------------------------------- */
-//   
-// }
+static void
+rotate_x(double alpha){
+    glLoadIdentity();
+    glPushMatrix();
+    double rotx[16] = {1,0,0,0, 0,cos(alpha),sin(alpha),0, 0,-sin(alpha),cos(alpha),0, 0,0,0,1};
+    glMultMatrixd(rotx);
+    glutPostRedisplay();    
+}
 
 /* Rotation around y-axis */
-// static void
-// rotate_y(double alpha){
-// 
-//   /* ---------------------------------------------- */ 
-//   /*                                                */
-//   /* T T T T T     O O       D D           O O      */
-//   /*     T        O   O      D   D        O   O     */
-//   /*     T       O     O     D     D     O     O    */ 
-//   /*     T       O     O     D     D     O     O    */ 
-//   /*     T        O   O      D   D        O   O     */
-//   /*     T         O O       D D           O O      */
-//   /*                                                */ 
-//   /* ---------------------------------------------- */ 	
-//   
-// }
+static void
+rotate_y(double alpha){
+    glLoadIdentity();
+    glPushMatrix();
+    double roty[16] = {cos(alpha),0,-sin(alpha),0, 0,1,0,0, sin(alpha),0,cos(alpha),0, 0,0,0,1};
+    glMultMatrixd(roty);
+    glutPostRedisplay();
+}
+
 
   
  /* Drawing complete surface triangulation */
@@ -223,9 +219,14 @@ key_mesh(unsigned char key, int x, int y){
         case 'a': translate(x0-=0.05,y0,z0); break;
         case 'w': translate(x0,y0+=0.05,z0); break;
         case 's': translate(x0,y0-=0.05,z0); break;
-        case 0x02B: translate(x0,y0,z0+=0.05); printf("ZOOM IN\n");break;
-        case 0x02D: translate(x0,y0,z0-=0.05); printf("ZOOM OUT\n");break;
+        case 0x02B: translate(x0,y0,z0+=0.05); break; //'x' key
+        case 0x02D: translate(x0,y0,z0-=0.05); break; // '-' key
         
+        case 'r': rotate_x(rx+=0.01); break;
+        case 'f': rotate_x(rx+=-0.01); break;
+        case 'q': rotate_y(ry-=0.01); break;
+        case 'e': rotate_y(ry+=0.01); break;
+        case 'h': Printhelp(); break;
 //         case 'd': x0+=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
 //         case 'a': x0-=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
 //         case 's': y0-=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
@@ -240,7 +241,7 @@ key_mesh(unsigned char key, int x, int y){
 /* last but not least the main function */   
 int
 main(int argc,char **argv){
-  
+    printf("For help press 'h'\n");
 //   psurface3d sur;
 //   int i;
   
@@ -255,7 +256,7 @@ main(int argc,char **argv){
   }
  
 	glutInit(&argc, argv);
-	glutCreateWindow("Triangulation");
+	glutCreateWindow("Triangulation (for help press 'h')");
 	glutPositionWindow(450, 400);
 	glutReshapeWindow(900, 600);
 	
