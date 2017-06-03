@@ -14,7 +14,7 @@
 #include <GL/glut.h>
   
 #include "surface3d.h"	
-
+#define RDSP glutPostRedisplay();
 #ifndef M_PI
 /* Copied from math.h  */
 #define M_PI		3.14159265358979323846
@@ -26,12 +26,12 @@
 * Global variable
 *-------------------------------------------------------------*/
 							
-psurface3d sur0,sur1; 
-real x0 = -2.0, y0 = 0.0, z0 = -3.0; //coordinates of mesh
-real x1 = 2.0, y1 = 2.0, z1 = -10.0; //coordinates of solid
-real x = 0.0, y = 0.0, z = 0.0;
+psurface3d sur0;//sur1; 
+real x0 = -0.0, y0 = 0.0, z0 = -0.0; //coordinates of mesh
+// real x1 = 2.0, y1 = 2.0, z1 = -10.0; //coordinates of solid
+real xx = 0.0, yy = 0.0, zz = -5.0;
 // real xtr,ytr,ztr; // x-translation, y-translation, z-translation aka zoom
-real rx,ry;
+real rx,ry, anglex, angley;
 int k = 0;
 /* Translation */
 
@@ -46,34 +46,32 @@ Printhelp(){
 
 static void
 translate(double x, double y, double z){
-    glLoadIdentity();
-    glPushMatrix();
-    
-//     glTranslatef(x,y,z);
+//     glLoadIdentity();
+//     glPushMatrix();
     
     double tr[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, x,y,z,1};
     glMultMatrixd(tr);
-    glutPostRedisplay();
+//     glutPostRedisplay();
 }
 
 /* Rotation around x-axis */
 static void
 rotate_x(double alpha){
-    glLoadIdentity();
-    glPushMatrix();
+//     glLoadIdentity();
+//     glPushMatrix();
     double rotx[16] = {1,0,0,0, 0,cos(alpha),sin(alpha),0, 0,-sin(alpha),cos(alpha),0, 0,0,0,1};
     glMultMatrixd(rotx);
-    glutPostRedisplay();    
+//     glutPostRedisplay();    
 }
 
 /* Rotation around y-axis */
 static void
 rotate_y(double alpha){
-    glLoadIdentity();
-    glPushMatrix();
+//     glLoadIdentity();
+//     glPushMatrix();
     double roty[16] = {cos(alpha),0,-sin(alpha),0, 0,1,0,0, sin(alpha),0,cos(alpha),0, 0,0,0,1};
     glMultMatrixd(roty);
-    glutPostRedisplay();
+//     glutPostRedisplay();
 }
 
 
@@ -85,19 +83,27 @@ display_mesh(){
     glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
     
+    printf("%f, %f, %f\t\t %f, %f\n",xx,yy,zz,rx,ry);
+    printf("%f, %f, %f\t\t %f, %f\n",x0,y0,z0,anglex,angley);
+    
+    
     int edges = sur0->edges;
     int (*e)[2] = sur0->e;
     real (*x)[3] = sur0->x;
     
     glClearColor(0.0,0.0,0.0,1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
-    
-    
-//     glPopMatrix();
+    glPushMatrix();
+    translate(x0,y0,z0);
+    rotate_x(rx);
+    rotate_y(ry);
+    glPopMatrix();
     glBegin(GL_LINES);
     glMatrixMode(GL_PROJECTION);
+    
 //     glPushMatrix();
-    glTranslatef(x0,y0,z0);
+//     glTranslatef(xx,yy,zz);
+    
     glColor3f(1.0,1.0,1.0);
     
     glPushMatrix();
@@ -112,26 +118,6 @@ display_mesh(){
     glLoadIdentity();
     glEnd();
     
-    glPushMatrix();
-    glTranslatef(x1,y1,z1);
-//     glTranslatef(2.0,0.0,-5.0);
-    glColor3f(0.7,0.2,0.0);
-    
-    int triangles = sur1->triangles;
-    int (*t)[3] = sur1->t;
-    real (*v)[3] = sur1->x;
-    real(*n)[3] = sur1->n;
-    glPushMatrix();
-    
-    glBegin(GL_TRIANGLES);
-    for(int i = 0; i < triangles; i++){
-        glNormal3f(n[i][0],n[i][1],n[i][2]);
-        for(int j = 0; j < 3; j++){
-            glVertex3f(v[t[i][j]][0], v[t[i][j]][1], v[t[i][j]][2]);
-        }
-    }
-    glLoadIdentity();
-    glEnd();
     glPopMatrix();
     glFlush();
     glutSwapBuffers();
@@ -152,7 +138,6 @@ GLfloat p[4],a[4],d[4];
         else{												
         glScalef(1.0, (double) width/height, 1.0);
         }
-
         */
     if(width > height)
         glViewport((width-height)/2, 0, height, height);
@@ -161,8 +146,13 @@ GLfloat p[4],a[4],d[4];
     
     printf("RESHAPE\n");
     gluPerspective(35.0, 1.0, 1.0, 30.0);
-    glTranslatef(x=0.0, y=0.0, z=-5.0);
-//     translate(xtr,ytr,ztr);
+    glTranslatef(xx,yy,zz);
+    rotate_y(angley);
+    rotate_x(anglex);
+    
+//     glRotatef(anglex,1.0,0.0,0.0);
+//     glRotatef(angley,0.0,1.0,0.0);
+//     translate(x0,y0,z0);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();	
 
@@ -215,17 +205,17 @@ static void
 key_mesh(unsigned char key, int x, int y){
 
     switch (key){
-        case 'd': translate(x0+=0.05,y0,z0); break;
-        case 'a': translate(x0-=0.05,y0,z0); break;
-        case 'w': translate(x0,y0+=0.05,z0); break;
-        case 's': translate(x0,y0-=0.05,z0); break;
-        case 0x02B: translate(x0,y0,z0+=0.05); break; //'x' key
-        case 0x02D: translate(x0,y0,z0-=0.05); break; // '-' key
+        case 'd': translate(x0=0.05,0.0,0.0); xx+=x0; RDSP; break;
+        case 'a': translate(x0=-0.05,0.0,0.0); xx+=x0; RDSP; break;
+        case 'w': translate(0.0,y0=0.05,0.0); yy+=y0; RDSP; break;
+        case 's': translate(0.0,y0=-0.05,0.0); yy+=y0; RDSP; break;
+        case 0x02B: translate(0.0,0.0,z0=0.05); zz+=z0; RDSP; break; //'x' key
+        case 0x02D: translate(0.0,0.0,z0=-0.05); zz+=z0; RDSP; break; // '-' key
         
-        case 'r': rotate_x(rx+=0.01); break;
-        case 'f': rotate_x(rx+=-0.01); break;
-        case 'q': rotate_y(ry-=0.01); break;
-        case 'e': rotate_y(ry+=0.01); break;
+        case 'r': rotate_x(rx=M_PI*0.01); anglex+=rx; RDSP; break;
+        case 'f': rotate_x(rx=-M_PI*0.01); anglex+=rx; RDSP; break;
+        case 'q': rotate_y(ry=M_PI*0.01); angley+=ry; RDSP; break;
+        case 'e': rotate_y(ry=-M_PI*0.01); angley+=ry; RDSP; break;
         case 'h': Printhelp(); break;
 //         case 'd': x0+=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
 //         case 'a': x0-=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
@@ -248,7 +238,7 @@ main(int argc,char **argv){
   /* Reading mesh */
   if(argc > 1){
     sur0 = read_surface3d(argv[1]); 
-    sur1 = read_surface3d(argv[2]);
+//     sur1 = read_surface3d(argv[2]);
 	}
   else{
     printf("No input file!\n");
@@ -258,7 +248,7 @@ main(int argc,char **argv){
 	glutInit(&argc, argv);
 	glutCreateWindow("Triangulation (for help press 'h')");
 	glutPositionWindow(450, 400);
-	glutReshapeWindow(900, 600);
+	glutReshapeWindow(800, 800);
 	
 	glutReshapeFunc(reshape_mesh);
 	glutDisplayFunc(display_mesh);
