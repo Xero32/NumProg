@@ -33,14 +33,23 @@ real xx = 0.0, yy = 0.0, zz = -5.0;
 // real xtr,ytr,ztr; // x-translation, y-translation, z-translation aka zoom
 real rx,ry, anglex, angley;
 int k = 0;
+int currentx, currenty;
+int Height, Width;
+int rotateflag;
+char meshflag;
+double zoom = 1.0;
 /* Translation */
 
 static void
 Printhelp(){
-    printf("Usage Info:\n Use Keyboard to move, zoom, and rotate objects.\n\n");
-    printf("Use 'w', 'a', 's', 'd' to move object.\n Zoom in with '+', zoom out with '-'\n");
+    printf("\nUsage Info:\n");
+    printf("After inputfile, denote simulation mode:\n\t'm': mesh\n\t'b': solid\n\n");
+    printf("Use Keyboard to move, zoom, and rotate objects.\n\n");
+    printf("Use 'w', 'a', 's', 'd' to move object.\nZoom in with '+', zoom out with '-'\n");
     printf("Rotate around the x axis by pressing 'r' and 'f'\n");
-    printf("Rotate around the y axis by pressing 'q' and 'e'\n");
+    printf("Rotate around the y axis by pressing 'q' and 'e'\n\n");
+    printf("You can also rotate the body with your mouse by pressing any mouse button.\nZoom with mouse wheel\n\n");
+    printf("Close with 'esc'\n\n");
 }
 
 
@@ -82,38 +91,58 @@ display_mesh(){
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glEnable(GL_DEPTH_TEST);
-    
     printf("%f, %f, %f\t\t %f, %f\n",xx,yy,zz,rx,ry);
     printf("%f, %f, %f\t\t %f, %f\n",x0,y0,z0,anglex,angley);
+    printf("%f\n",zoom);
     
-    
-    int edges = sur0->edges;
-    int (*e)[2] = sur0->e;
-    real (*x)[3] = sur0->x;
-    
-    glClearColor(0.0,0.0,0.0,1.0);
+    glClearColor(0.9,0.9,0.9,1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
     glPushMatrix();
+    
+    if(rotateflag){
+        rotate_y(rx);
+        rotate_x(ry);
+    }else{
+        rotate_x(rx);
+        rotate_y(ry);
+    }
     translate(x0,y0,z0);
-    rotate_x(rx);
-    rotate_y(ry);
     glPopMatrix();
-    glBegin(GL_LINES);
-    glMatrixMode(GL_PROJECTION);
-    
-//     glPushMatrix();
-//     glTranslatef(xx,yy,zz);
-    
-    glColor3f(1.0,1.0,1.0);
-    
-    glPushMatrix();
     printf("counter: %d\n",k++);
-//     glTranslatef(-2,1.5,0.5);
-//     translate(xtr,ytr,ztr);
-    for(int i = 0; i < edges; i++){
-        for(int j = 0; j < 2; j++){
-            glVertex3f(x[e[i][j]][0], x[e[i][j]][1], x[e[i][j]][2]);
+    glColor3f(0.3,0.2,0.4);
+    if(meshflag == 'm'){
+        glBegin(GL_LINES);
+        glMatrixMode(GL_PROJECTION);
+        glPushMatrix();
+        
+        int edges = sur0->edges;
+        int (*e)[2] = sur0->e;
+        real (*x)[3] = sur0->x;
+        
+        for(int i = 0; i < edges; i++){
+            for(int j = 0; j < 2; j++){
+                glVertex3f(x[e[i][j]][0], x[e[i][j]][1], x[e[i][j]][2]);
+            }
         }
+        
+    }else if(meshflag == 'b'){
+        int triangles=sur0->triangles;
+	int (*t)[3]=sur0->t;
+	real (*x)[3]=sur0->x;
+	real (*n)[3]=sur0->n;
+        glBegin(GL_TRIANGLES);
+	
+	float material_ambient[4] = { 1.0, 0.0, 0.0, 0.0 }; 
+	float material_diffuse[4] = { 1.0, 0.0, 0.0, 0.0 };
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient); 
+	glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, material_diffuse);
+
+	for(int i=0; i<triangles; i++){
+		glNormal3f(n[i][0],n[i][1],n[i][2]);
+		for(int j=0; j<3; j++){
+			glVertex3f(x[t[i][j]][0],x[t[i][j]][1],x[t[i][j]][2]);
+		}
+	}
     }
     glLoadIdentity();
     glEnd();
@@ -127,23 +156,24 @@ display_mesh(){
 static void
 reshape_mesh(int width, int height){
 GLfloat p[4],a[4],d[4];
-
+    Width = width;
+    Height = height;
     glViewport(0, 0, width, height); 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-        /*
+        
         if(width > height){								
         glScalef((double) height/width, 1.0, 1.0);
         }
         else{												
         glScalef(1.0, (double) width/height, 1.0);
         }
-        */
+    /*
     if(width > height)
         glViewport((width-height)/2, 0, height, height);
     else
         glViewport(0, (height-width)/2, width, width);
-    
+    */
     printf("RESHAPE\n");
     gluPerspective(35.0, 1.0, 1.0, 30.0);
     glTranslatef(xx,yy,zz);
@@ -178,27 +208,33 @@ GLfloat p[4],a[4],d[4];
 
   /* Mouse movement on a triangulation */
 
-//   static void
-// mouse_mesh(int button, int state, int position_y, int position_x){
-// 
-//   /* ---------------------------------------------- */ 
-//   /*                                                */
-//   /* T T T T T     O O       D D           O O      */
-//   /*     T        O   O      D   D        O   O     */
-//   /*     T       O     O     D     D     O     O    */ 
-//   /*     T       O     O     D     D     O     O    */ 
-//   /*     T        O   O      D   D        O   O     */
-//   /*     T         O O       D D           O O      */
-//   /*                                                */ 
-//   /* ---------------------------------------------- */ 	
-//  
-// }
+  static void
+mouse_mesh(int button, int state, int position_y, int position_x){
+    currentx = position_x;
+    currenty = position_y;
+    if(button == 3){
+        translate(0.0,0.0,z0=0.05);
+        zz+=z0;
+        RDSP;
+    }else if(button == 4){
+        translate(0.0,0.0,z0=-0.05);
+        zz+=z0;
+        RDSP;
+    }
+}
 
   /* Motion on a triangulation */
-// static void
-// motion_mesh(int position_y, int position_x){
-//  
-// }
+static void
+motion_mesh(int position_y, int position_x){
+    rotate_x(rx=(float)(position_x-currentx)/Height);
+    anglex+=rx;
+    rotate_y(ry=(float)(position_y-currenty)/Height);
+    angley+=ry;
+    currenty=position_y;
+    currentx=position_x;
+    glutPostRedisplay();
+}
+
  
   /* Key input for triangulation */
 static void
@@ -212,17 +248,12 @@ key_mesh(unsigned char key, int x, int y){
         case 0x02B: translate(0.0,0.0,z0=0.05); zz+=z0; RDSP; break; //'x' key
         case 0x02D: translate(0.0,0.0,z0=-0.05); zz+=z0; RDSP; break; // '-' key
         
-        case 'r': rotate_x(rx=M_PI*0.01); anglex+=rx; RDSP; break;
-        case 'f': rotate_x(rx=-M_PI*0.01); anglex+=rx; RDSP; break;
-        case 'q': rotate_y(ry=M_PI*0.01); angley+=ry; RDSP; break;
-        case 'e': rotate_y(ry=-M_PI*0.01); angley+=ry; RDSP; break;
+        case 'r': rotate_x(rx=M_PI*0.01); anglex+=rx; rotateflag = 0; RDSP; break;
+        case 'f': rotate_x(rx=-M_PI*0.01); anglex+=rx; rotateflag = 0; RDSP; break;
+        case 'q': rotate_y(ry=M_PI*0.01); angley+=ry; rotateflag = 1; RDSP; break;
+        case 'e': rotate_y(ry=-M_PI*0.01); angley+=ry; rotateflag = 1; RDSP; break;
         case 'h': Printhelp(); break;
-//         case 'd': x0+=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
-//         case 'a': x0-=0.1; printf("xtr: %f\n",x0); glutSwapBuffers(); glutPostRedisplay();break;
-//         case 's': y0-=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
-//         case 'w': y0+=0.1; printf("ytr: %f\n",y0); glutSwapBuffers(); glutPostRedisplay();break;
-//         case 0x2B: z0+=0.1; printf("ztr: %f\n",z0);glutSwapBuffers(); glutPostRedisplay();break; // '+' key
-//         case 0x2D: z0-=0.1; printf("ztr: %f\n",z0);glutSwapBuffers(); glutPostRedisplay();break; // '-' key
+
         case 27: exit(EXIT_SUCCESS);
     }
 }
@@ -231,20 +262,23 @@ key_mesh(unsigned char key, int x, int y){
 /* last but not least the main function */   
 int
 main(int argc,char **argv){
-    printf("For help press 'h'\n");
 //   psurface3d sur;
 //   int i;
   
   /* Reading mesh */
   if(argc > 1){
     sur0 = read_surface3d(argv[1]); 
-//     sur1 = read_surface3d(argv[2]);
+    if(argc > 2) meshflag = argv[2][0];
 	}
   else{
     printf("No input file!\n");
     return EXIT_SUCCESS;
   }
- 
+  if(meshflag != 'm' && meshflag != 'b'){
+      Printhelp();
+  }else{
+      printf("For help press 'h'\n");
+  }
 	glutInit(&argc, argv);
 	glutCreateWindow("Triangulation (for help press 'h')");
 	glutPositionWindow(450, 400);
@@ -253,9 +287,9 @@ main(int argc,char **argv){
 	glutReshapeFunc(reshape_mesh);
 	glutDisplayFunc(display_mesh);
 
-// 	glutMouseFunc(mouse);
+	glutMouseFunc(mouse_mesh);
 
-//     glutMotionFunc(motion_mesh);
+    glutMotionFunc(motion_mesh);
 
     glutKeyboardFunc(key_mesh);
 
