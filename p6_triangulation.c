@@ -28,7 +28,6 @@
 							
 psurface3d sur0;//sur1; 
 real x0 = -0.0, y0 = 0.0, z0 = -0.0; //coordinates of mesh
-// real x1 = 2.0, y1 = 2.0, z1 = -10.0; //coordinates of solid
 real xx = 0.0, yy = 0.0, zz = -5.0;
 // real xtr,ytr,ztr; // x-translation, y-translation, z-translation aka zoom
 real rx,ry, anglex, angley;
@@ -44,12 +43,16 @@ static void
 Printhelp(){
     printf("\nUsage Info:\n");
     printf("After inputfile, denote simulation mode:\n\t'm': mesh\n\t'b': solid\n\n");
+    printf("For easier use, the local coordinate system is shown. \n");
+    printf("Here the red axis corresponds to the x-axis, the green one to the y-axis \nand the blue one to the z-axis.\n");
     printf("Use Keyboard to move, zoom, and rotate objects.\n\n");
-    printf("Use 'w', 'a', 's', 'd' to move object.\nZoom in with '+', zoom out with '-'\n");
-    printf("Rotate around the x axis by pressing 'r' and 'f'\n");
-    printf("Rotate around the y axis by pressing 'q' and 'e'\n\n");
-    printf("You can also rotate the body with your mouse by pressing any mouse button.\nZoom with mouse wheel\n\n");
-    printf("Close with 'esc'\n\n");
+    printf("Use 'w', 'a', 's', 'd' to move object along its local x- and y-axes.\n");
+    printf("with 'x' and 'y' you can translate the object along its local z-axis.\n\nZoom in with '+', zoom out with '-', or with mouse wheel.\n\n");
+    printf("Rotate around the x axis by pressing 'r' and 'f',\n");
+    printf("Rotate around the y axis by pressing 'q' and 'e'.\n\n");
+    printf("You can also rotate the body with your mouse while \npressing and holding any mouse button.\n\n");
+    printf("Reset body with 'c'.\n");
+    printf("Close with 'esc'.\n\n");
 }
 
 
@@ -97,8 +100,9 @@ display_mesh(){
     
     glClearColor(0.9,0.9,0.9,1.0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	
+    glMatrixMode(GL_PROJECTION);
     glPushMatrix();
-    
+    glScalef(zoom,zoom,zoom);
     if(rotateflag){
         rotate_y(rx);
         rotate_x(ry);
@@ -109,12 +113,15 @@ display_mesh(){
     translate(x0,y0,z0);
     glPopMatrix();
     printf("counter: %d\n",k++);
+    
+
+
+    // draw body
+    glLineWidth(1.0);
     glColor3f(0.3,0.2,0.4);
     if(meshflag == 'm'){
         glBegin(GL_LINES);
-        glMatrixMode(GL_PROJECTION);
-        glPushMatrix();
-        
+
         int edges = sur0->edges;
         int (*e)[2] = sur0->e;
         real (*x)[3] = sur0->x;
@@ -131,7 +138,8 @@ display_mesh(){
 	real (*x)[3]=sur0->x;
 	real (*n)[3]=sur0->n;
         glBegin(GL_TRIANGLES);
-	
+// 	glMatrixMode(GL_MODELVIEW);
+//         glPushMatrix();
 	float material_ambient[4] = { 1.0, 0.0, 0.0, 0.0 }; 
 	float material_diffuse[4] = { 1.0, 0.0, 0.0, 0.0 };
 	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, material_ambient); 
@@ -145,6 +153,20 @@ display_mesh(){
 	}
     }
     glLoadIdentity();
+    glEnd();
+    
+    // draw coordinate system
+    glLineWidth(1.5);
+    glBegin(GL_LINES);
+    glColor3f(1.0,0.0,0.0);
+    glVertex3f(0.0,0.0,0.0);
+    glVertex3f(2.0,0.0,0.0);
+    glColor3f(0.0,1.0,0.0);
+    glVertex3f(0.0,0.0,0.0);
+    glVertex3f(0.0,2.0,0.0);
+    glColor3f(0.0,0.0,1.0);
+    glVertex3f(0.0,0.0,0.0);
+    glVertex3f(0.0,0.0,2.0);
     glEnd();
     
     glPopMatrix();
@@ -213,12 +235,10 @@ mouse_mesh(int button, int state, int position_y, int position_x){
     currentx = position_x;
     currenty = position_y;
     if(button == 3){
-        translate(0.0,0.0,z0=0.05);
-        zz+=z0;
+        glScalef(1.01,1.01,1.01); 
         RDSP;
     }else if(button == 4){
-        translate(0.0,0.0,z0=-0.05);
-        zz+=z0;
+        glScalef(0.99,0.99,0.99); 
         RDSP;
     }
 }
@@ -245,14 +265,16 @@ key_mesh(unsigned char key, int x, int y){
         case 'a': translate(x0=-0.05,0.0,0.0); xx+=x0; RDSP; break;
         case 'w': translate(0.0,y0=0.05,0.0); yy+=y0; RDSP; break;
         case 's': translate(0.0,y0=-0.05,0.0); yy+=y0; RDSP; break;
-        case 0x02B: translate(0.0,0.0,z0=0.05); zz+=z0; RDSP; break; //'x' key
-        case 0x02D: translate(0.0,0.0,z0=-0.05); zz+=z0; RDSP; break; // '-' key
-        
+        case 'x': translate(0.0,0.0,z0=0.05); zz+=z0; RDSP; break; 
+        case 'y': translate(0.0,0.0,z0=-0.05); zz+=z0; RDSP; break; 
+        case 0x02B: glScalef(1.01,1.01,1.01); zoom+=0.01; RDSP; break; //'x' key
+        case 0x02D: glScalef(0.99,0.99,0.99); zoom-=0.01; RDSP; break; // '-' key
         case 'r': rotate_x(rx=M_PI*0.01); anglex+=rx; rotateflag = 0; RDSP; break;
         case 'f': rotate_x(rx=-M_PI*0.01); anglex+=rx; rotateflag = 0; RDSP; break;
         case 'q': rotate_y(ry=M_PI*0.01); angley+=ry; rotateflag = 1; RDSP; break;
         case 'e': rotate_y(ry=-M_PI*0.01); angley+=ry; rotateflag = 1; RDSP; break;
         case 'h': Printhelp(); break;
+        case 'c': glLoadIdentity(); anglex=angley=0.0; xx=yy=zz=0.0; RDSP; break;
 
         case 27: exit(EXIT_SUCCESS);
     }
