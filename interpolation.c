@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 7 - Approximation von Funktionen Interpolation  	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 						 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marko Hollm, Marvin Becker         	 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
   #include <stdlib.h>
@@ -54,13 +54,18 @@ void
 setup_chebyshev_interpolationpoints(pinterpolation inter, double a, double b){
     int m = inter->m;
     double *x = inter->xi;
-    assert(a<=b);
+//     assert(a<=b);
+    if(a > b){
+        double c = a;
+        a = b;
+        b = c;
+    }
     assert(m);
-    double z = (b-a) / 2;
-    double w = (b+a) / 2;
+    double z = (b-a) / 2.0;
+    double w = (b+a) / 2.0;
     
-    for(int i = 0; i < m+1; i++){
-        x[i] = w + z * cos( (2*i - 1) * M_PI / 2 * m);
+    for(int i = 1; i < m+1; i++){
+        x[m-i] = w + z * cos( (2.0 * (double)i - 1.0) * M_PI / (2.0 * (double)m));
     }
 }
 
@@ -68,13 +73,16 @@ void
 setup_aequidistant_interpolationpoints(pinterpolation inter, double a, double b){
     int m = inter->m;
     double *x = inter->xi;
-    assert(b>=a);
+//     assert(b>=a);
+    if(a > b){
+        double c = a;
+        a = b;
+        b = c;
+    }
     assert(m);
-    double z = (double)(b-a)/m;
-    printf("inside aequidistant fct\n");
-    for(int i = 0; i < m+1; i++){
-        x[i] = i * z - 1;
-        printf("z: %f, x[i]: %f, i: %d\n",z,x[i],i);
+    double z = (double)(b-a)/(m-1);
+    for(int i = 0; i < m; i++){
+        x[i] = i * z + a;
     }
 }
 
@@ -91,37 +99,22 @@ eval_interpolated_values(pinterpolation inter, function f, void *data){
 
 /* Evaluate Newton divided differences */
 
-double
-n(int i, int j, double xx, pinterpolation inter){
-    double *xi = inter->xi;
-    double result = 1;
-    
-    for(int k = i; k < j; k++){
-        result *= xx-xi[k];
-    }
-    return result;
-}
-
 void
 newton_divided_differences(pinterpolation inter){
-// A d = b  solve
-// optimize!!
     int m = inter->m;
     double *x = inter->xi;
     double *y = inter->f;
     double *d = inter->d;
-    double p[m+1];
-    
-    for(int i = 0; i < m; i++){
-        for(int j = 0; j <= i; j++){
-            p[j] = n(0,j,x[i], inter);
+    d[0] = y[0];
+    for(int u = 0; u <= m; u++){
+        d[u] = y[u];
+    }
+    for(int k = 1; k <= m; k++){
+        for(int j = m; j-->k;){
+            int i = j-k;
+            assert(x[j] - x[i]);
+            d[j] = (d[j] - d[j-1]) / (x[j] - x[i]);
         }
-        d[i] = y[i];
-        for(int j = 0; j <= i; j++){
-            d[i] -= p[j]*d[j];
-        }
-        assert(p[i]);
-        d[i] /= p[i];
     }
 }
 
@@ -131,14 +124,13 @@ double
 eval_interpolation_polynomial(const pinterpolation inter, double x){
     int m = inter->m;
     double *xi = inter->xi;
-//     double *y = inter->f;
     double *d = inter->d;
-    double p;
+    double p = d[m];
     
-    p = d[m];
-    
-    for(int l = 1; l < m; l++){
-        p = d[m-l] + (x - xi[m-l]) * p;
+    for(int l = 1; l <= m; l++){
+        p *= x-xi[m-l];
+        p += d[m-l];
     }
+
     return p;
 }
