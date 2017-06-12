@@ -26,7 +26,7 @@
 * Global variable
 *-------------------------------------------------------------*/
 int m = 10;
-int tmr = 0.5;
+double t = 0.0;
 // int n = 50;
 int n;
 int fctflag;
@@ -53,15 +53,14 @@ g(double x){
 }
 
 void
-setup_transition_points(pinterpolation inter0, pinterpolation inter1, pinterpolation inter2, double a, double b){
+setup_transition_points(pinterpolation inter0, pinterpolation inter1, pinterpolation inter2, double tmr){
     double *x0 = inter0->xi;
     double *x1 = inter1->xi;
     double *x2 = inter2->xi;
-    tmr = 0.5;
     for(int i = 0; i < m; i++){
-//         x2[i] = (x1[i] - x0[m-i]) * 0.5 + x0[i];
-        printf("t: %d\n",tmr);
-        printf("x0[%d]: %f, x1[%d]: %f, x2[%d]: %f\n", i,x0[m-i],i,x1[i],i,x2[i]);
+        x2[i] = (x1[i] - x0[i]) * tmr + x0[i];
+//         printf("inside setup fct, t: %f\n",tmr);   
+        printf("x0[%d]: %f, x1[%d]: %f, x2[%d]: %f\n", i,x0[i],i,x1[i],i,x2[i]);
     }
 
 //     t += 0.5;
@@ -71,15 +70,24 @@ setup_transition_points(pinterpolation inter0, pinterpolation inter1, pinterpola
 * GLUT functions
 *-------------------------------------------------------------*/
 void
+timer(int val){
+    if(t <= 1.0 && t >= 0.0){
+        t += 0.01;
+        glutPostRedisplay();
+        glutTimerFunc(20, timer, 0);
+    }
+}
+
+void
 display(){
     glutSetWindow(1);
     double *y1 = inter1->f;
     double *x1 = inter1->xi;
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.9,0.9,0.9,1.0);
     glPushMatrix();
     //draw interpolation
-    
     glBegin(GL_LINE_STRIP);
     glColor3f(0.0,0.8,0.0);
     for(int i = 0; i < m; i++){
@@ -108,21 +116,14 @@ display(){
         glVertex2f((double)(j/100.0)-1.0,p1);
     }
     glEnd();
-    
+  
     double *x2 = inter2->xi;
     double *y2 = inter2->f;
-//     setup_transition_points(inter0, inter1, inter2, a,b);
-//     eval_interpolated_values(inter2, (function)f, data);
-//     newton_divided_differences(inter2);
-    // connect interpolation points
-    glBegin(GL_LINE_STRIP);
-    glColor3f(0.0,0.8,0.9);
-    for(int i = 0; i < m; i++){
-        glVertex2f(x2[i], y2[i] - 0.5);
-    }
-    glEnd();
+    setup_transition_points(inter0,inter1,inter2,t);
+    eval_interpolated_values(inter2, (function)g, data);
+    newton_divided_differences(inter2);
     
-    // draw red squares at interpolation points
+     // draw purple squares at interpolation points
     for(int i = 0; i < m; i++){
         glBegin(GL_LINE_LOOP);
         glColor3f(1.0,0.0,1.0);
@@ -132,8 +133,14 @@ display(){
         glVertex2f(x2[i] - 0.01, y2[i] - 0.49);
         glEnd();    
     }
-    
-    
+
+    glBegin(GL_LINE_STRIP);
+    glColor3f(0.1,0.1,0.1);
+    for(int i = 0; i < 300; i++){
+        p2 = eval_interpolation_polynomial(inter2, (double) (i/100.0)-1.0) - 0.5;
+        glVertex2f((double)(i/100.0)-1.0,p2);
+    }
+    glEnd();
     
     
     glFlush();
@@ -154,7 +161,6 @@ reshape(int width, int height){
 
 void
 select_function(int flag){
-    printf("flag: %d\n", flag);
     if(!flag){
         eval_interpolated_values(inter1, (function)f, data);
         newton_divided_differences(inter1);
@@ -173,48 +179,32 @@ key(unsigned char key, int x, int y){
     switch(key){
         case 27:    exit(EXIT_SUCCESS);
         case 's':   if(!interflag){ 
-//                         printf("fctflag: %d\n",fctflag);
                         setup_aequidistant_interpolationpoints(inter1, a,b);
                         select_function(!fctflag); 
                         interflag = 1 - interflag;
                         glutPostRedisplay(); break;
                     }else{
-//                         printf("fctflag: %d\n",fctflag);
                         setup_chebyshev_interpolationpoints(inter1, a,b);
                         select_function(!fctflag);
                         interflag = 1 - interflag;
                         glutPostRedisplay(); break;
                     }
         case 'f':   if(!fctflag){
-//                         printf("fctflag: %d\n",fctflag);
                         select_function(fctflag);
                         fctflag = 1 - fctflag;
                         glutPostRedisplay(); break;
                     }else{
-//                         printf("fctflag: %d\n",fctflag);
                         select_function(fctflag);
                         fctflag = 1 -  fctflag;
                         glutPostRedisplay(); break;
                     }
-    
-         
-
+        case 'r':   t = 0.0;
+                    glutTimerFunc(10, timer, 0);
+                    break;
     }
 }
 
-// void
-// timer(int val){
-//     double *x0 = inter0->xi;
-//     double *x1 = inter1->xi;
-//     double *x2 = inter2->xi;
-// //     for(int i = 0; i < m; i++){
-// //         x2[i] = (x1[i] - x0[i]) * t + x0[i];
-// //     }
-// //     t += 0.05;
-//     eval_interpolated_values(inter2, (function)f, data);
-//     glutPostRedisplay();
-//     glutTimerFunc(20, timer, 0);
-// }
+
 
 void 
 transition(){
@@ -274,11 +264,7 @@ main(int argc, char **argv){
     newton_divided_differences(inter1);
 
     
-    inter2 = new_interpolation(m);
-//     setup_transition_points(inter0, inter1, inter2, a,b);
-//     eval_interpolated_values(inter2, (function)f, data);
-//     newton_divided_differences(inter2);
-    
+    inter2 = new_interpolation(m);    
     
     glutInit(&argc, argv);
     glutCreateWindow("Interpolation");
@@ -295,14 +281,8 @@ main(int argc, char **argv){
 //     
     glutKeyboardFunc(key);
 //     glutKeyboardFunc
-//      glutTimerFunc(50, timer, 0);
+    glutTimerFunc(50, timer, 0);
     glutMainLoop();
-    
-    
-    
-    
-    
-    
 
     return EXIT_SUCCESS;
 }
