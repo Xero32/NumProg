@@ -241,11 +241,15 @@ key(unsigned char key, int x, int y){
                     setup(fctflag);
                     glutPostRedisplay();
                     return;
-        case 0x02D: m--; //'-' key;
+        case 0x02D: if(m>1){m--; //'-' key;
                     delete_all();
                     setup(fctflag);
                     glutPostRedisplay();
                     return;
+		            }else{
+						printf("You can't decrease the amount of nodes any further. \n");
+					return;	
+					}
         case 'a':   printf("choose left boundary: \n");
                     CHKPOS(scanf("%lf",&a));
                     delete_all();
@@ -293,11 +297,15 @@ key2(unsigned char key, int x, int y){
                     setup(fctflag);  
                     glutPostRedisplay();
                     return;
-        case 0x02D: m--; //'-' key;
+        case 0x02D: if(m>1){m--; //'-' key;
                     delete_all();
                     setup(fctflag);
                     glutPostRedisplay();
                     return;
+		            }else{
+						printf("You can't decrease the amount of nodes any further. \n");
+					return;	
+					}	
        case 'a':    printf("choose left boundary: \n");
                     CHKPOS(scanf("%lf",&a));
                     delete_all();

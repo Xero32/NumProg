@@ -60,7 +60,7 @@ setup_chebyshev_interpolationpoints(pinterpolation inter, double a, double b){
         a = b;
         b = c;
     }
-    assert(m);
+//    assert(m);
     double z = (b-a) / 2.0;
     double w = (b+a) / 2.0;
     
@@ -79,7 +79,7 @@ setup_aequidistant_interpolationpoints(pinterpolation inter, double a, double b)
         a = b;
         b = c;
     }
-    assert(m);
+//    assert(m);
     double z = (double)(b-a)/(m-1);
     for(int i = 0; i < m; i++){
         x[i] = i * z + a;
