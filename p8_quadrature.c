@@ -49,14 +49,22 @@ draw_coord(){
     glVertex2f(-1.0,100.0);     //y-axis
     glVertex2f(100.0,0.0);      //x-axis
     glVertex2f(-100.0,0.0);     //x-axis
-    glVertex2f(0.0,-.07);        //x-mark
+    glVertex2f(-0.5,-.03);      //x-mark
+    glVertex2f(-0.5,.03);
+    glVertex2f(0.0,-.07);       
     glVertex2f(0.0,.07);
-    glVertex2f(-2.0,-.07);       //x-mark
-    glVertex2f(-2.0,.07);
-    glVertex2f(-0.8,1.0);       //y-mark
-    glVertex2f(-1.2,1.0);  
-    glVertex2f(-0.8,-1.0);      //y-mark
-    glVertex2f(-1.2,-1.0);
+    glVertex2f(0.5,-.03);
+    glVertex2f(0.5,.03);
+    glVertex2f(1.0,-.07);
+    glVertex2f(1.0,.07);
+    glVertex2f(1.5,-.03);
+    glVertex2f(1.5,.03);
+    glVertex2f(-0.9,1.0);       //y-mark
+    glVertex2f(-1.1,1.0);  
+    glVertex2f(-0.95,0.5);
+    glVertex2f(-1.05,0.5);
+    glVertex2f(-0.9,-1.0);      //y-mark
+    glVertex2f(-1.1,-1.0);
 }
 
 void
@@ -75,6 +83,7 @@ display(){
     glEnable (GL_BLEND); 
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPushMatrix();
+    glOrtho(-.4,.1,-.1,0.8,-1.0,1.0);
     
     // draw function
     glBegin(GL_LINE_STRIP);
@@ -111,11 +120,11 @@ display(){
     glLineWidth(1.5);
     glBegin(GL_LINES);
     glColor3f(1.0,0.0,0.0);
-    draw_marks(aa,.28);
-    draw_marks(bb,.28);
+    draw_marks(aa,.2);
+    draw_marks(bb,.2);
     glEnd();
     glLineWidth(1.0);
-
+    glPopMatrix();
     glFlush();
     glutSwapBuffers();
 }
@@ -130,6 +139,7 @@ display2(){
     glEnable (GL_BLEND); 
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPushMatrix();
+    glOrtho(-.4,.1,-.1,0.8,-1.0,1.0);
     
      // draw function
     glBegin(GL_LINE_STRIP);
@@ -137,7 +147,7 @@ display2(){
     for(int j = 0; j < 500; j++){
         glVertex2f((double)(j/50.0)-5.0,f((double)(j/50.0)-4.0));
     }
-    glEnd();
+    glEnd(); 
     
     //draw coordinate system
     //shift coordinate system, because function is boring for x < 0
@@ -147,13 +157,11 @@ display2(){
     glLineWidth(1.5);
     glBegin(GL_LINES);
     glColor3f(1.0,0.0,0.0);
-    draw_marks(aa,.28);
-    draw_marks(bb,.28);
+    draw_marks(aa,.2);
+    draw_marks(bb,.2);
     glEnd();
     glLineWidth(1.0);
     
-    
-//     double *xt = trquad->xq;
     double u = 1.0 / (double)n;
     double l = b-a;
     
@@ -196,7 +204,7 @@ display2(){
         glVertex2f((i+1)*l*u-1.0, 0.0);
         glEnd();
     }
-
+    glPopMatrix();
     glFlush();
     glutSwapBuffers();
 }
@@ -216,7 +224,32 @@ reshape(int width, int height){
 void
 keyboard(unsigned char key, int x, int y){
     switch(key){
-        case 27: exit(EXIT_SUCCESS);
+        case 27: 
+            exit(EXIT_SUCCESS);
+        case 0x02B: // '+' key
+            glutSetWindow(2); 
+            n++; 
+            areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
+            areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
+            printf("Composite Quadratures for n = %d:\n",n);
+            printf("Composite Midpoint: %f\n",areamid_comp);
+            printf("Composite Trapezoidal: %f\n\n",areatr_comp);
+            glutPostRedisplay(); 
+            break;
+        case 0x02D: // '-' key
+            if(n > 0){
+                glutSetWindow(2);
+                n--; 
+                areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
+                areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
+                printf("Composite Quadratures for n = %d:\n",n);
+                printf("Composite Midpoint: %f\n",areamid_comp);
+                printf("Composite Trapezoidal: %f\n\n",areatr_comp);
+                glutPostRedisplay(); 
+                break;
+            }else{
+                printf("You cannot lower n any further.\n");
+            }
     }
 }
 
@@ -228,6 +261,8 @@ int main(int argc, char** argv){
     a = 0.0;
     b = M_PI * 0.5;
     n = 10;
+    
+    if(argc > 1) n = atof(argv[1]);
     
     midquad = setup_midpointrule();
     areamid = eval_quadrature(midquad, a, b, (function)f, data);
@@ -242,7 +277,7 @@ int main(int argc, char** argv){
     printf("Integral Trapezoidal: %f\n\n",areatr);
     printf("Composite Quadratures for n = %d:\n",n);
     printf("Composite Midpoint: %f\n",areamid_comp);
-    printf("Composite Trapezoidal: %f\n",areatr_comp);
+    printf("Composite Trapezoidal: %f\n\n",areatr_comp);
     
     
     
