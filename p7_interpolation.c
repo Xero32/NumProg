@@ -27,18 +27,18 @@
 /* ------------------------------------------------------------
 * Global variable
 *-------------------------------------------------------------*/
-int m = 8;
+int m = 6;
 double t = 0.0;
 // int n = 50;
 int n;
 int fctflag, fctflag2;
 int interflag = 0;
-double data[1] = {0.75};
+double data[1] = {2.9};
 double p0, p1;
 double a,b;
 int err;
-pinterpolation inter0, inter1;;
-
+pinterpolation inter0, inter1;
+int FLAG = 0;
 /* ------------------------------------------------------------
 * Example function
 *-------------------------------------------------------------*/
@@ -80,7 +80,7 @@ static void
 setup_transition_points(pinterpolation inter0, pinterpolation inter1, double step){
     double *x0 = inter0->xi;
     double *x1 = inter1->xi;
-    for(int i = 0; i < m; i++){
+    for(int i = 0; i < m+1; i++){
         x0[i] = (x1[i] - x0[i]) * step + x0[i];
     }
 }
@@ -126,7 +126,7 @@ display(){
     glutSetWindow(1);
     double *y1 = inter1->f;
     double *x1 = inter1->xi;
-
+    double *d1 = inter1->d;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glClearColor(0.9,0.9,0.9,1.0);
     glPushMatrix();
@@ -134,19 +134,20 @@ display(){
     //draw interpolation
     glBegin(GL_LINE_STRIP);
     glColor3f(0.0,0.8,0.0);
-    for(int i = 0; i < m; i++){
-        glVertex2f(x1[i], y1[i] - 0.5);
+    for(int i = 0; i < m+1; i++){
+        glVertex2f(x1[i], y1[i]);
+        if(FLAG == 1) printf("d[%d] = %f\n",i,d1[i]);
     }
     glEnd();
 
     // draw red squares at interpolation points
-    for(int i = 0; i < m; i++){
+    for(int i = 0; i < m+1; i++){
         glBegin(GL_LINE_LOOP);
         glColor3f(1.0,0.0,0.0);
-        glVertex2f(x1[i] - 0.01, y1[i] - 0.51);
-        glVertex2f(x1[i] + 0.01, y1[i] - 0.51);
-        glVertex2f(x1[i] + 0.01, y1[i] - 0.49);
-        glVertex2f(x1[i] - 0.01, y1[i] - 0.49);
+        glVertex2f(x1[i] - 0.04, y1[i] - 0.04);
+        glVertex2f(x1[i] + 0.04, y1[i] - 0.04);
+        glVertex2f(x1[i] + 0.04, y1[i] + 0.04);
+        glVertex2f(x1[i] - 0.04, y1[i] + 0.04);
         glEnd();    
     }
     
@@ -154,13 +155,32 @@ display(){
     glBegin(GL_LINE_STRIP);
     glColor3f(0.0,0.0,0.9);
     newton_divided_differences(inter1);
-    for(int j = 0; j < 400; j++){
-        p1 = eval_interpolation_polynomial(inter1, (double)(j/100.0)-1.0) - 0.5;
-        glVertex2f((double)(j/100.0)-1.0,p1);
+    for(int j = 0; j < 500; j++){
+        p1 = eval_interpolation_polynomial(inter1, (double)(j/50.0)-5.0);
+        glVertex2f((double)(j/50.0)-5.0,p1);
     }
     glEnd();
+    
+    //draw coordinate system
+    glBegin(GL_LINES);
+    glColor3f(0.0,0.0,0.0);
+    glVertex2f(0.0,-100.0);
+    glVertex2f(0.0,100.0);
+    glVertex2f(100.0,0.0);
+    glVertex2f(-100.0,0.0);
+    glVertex2f(1.0,-.1);  
+    glVertex2f(1.0,.1);
+    glVertex2f(-1.0,-.1);
+    glVertex2f(-1.0,.1);
+    glVertex2f(.1,1.0);
+    glVertex2f(-.1,1.0);
+    glVertex2f(.1,-1.0);
+    glVertex2f(-.1,-1.0);
+    glEnd();
+    
     glFlush();
     glutSwapBuffers();
+    FLAG++;
 }
 
 void
@@ -175,24 +195,44 @@ display2(){
     select_function(inter0, !fctflag2);
     
      // draw purple crosses at interpolation points
-    for(int i = 0; i < m; i++){
+    glLineWidth(2.0);
+    for(int i = 0; i < m+1; i++){
         glBegin(GL_LINES);
         glColor3f(1.0,0.0,1.0);
-        glVertex2f(x0[i] - 0.013, y0[i] - 0.513);
-        glVertex2f(x0[i] + 0.013, y0[i] - 0.482);
-        glVertex2f(x0[i] - 0.013, y0[i] - 0.482);
-        glVertex2f(x0[i] + 0.013, y0[i] - 0.513);
-        glEnd();    
+        glVertex2f(x0[i] - 0.05, y0[i] - 0.05);
+        glVertex2f(x0[i] + 0.05, y0[i] + 0.05);
+        glVertex2f(x0[i] - 0.05, y0[i] + 0.05);
+        glVertex2f(x0[i] + 0.05, y0[i] - 0.05);
+        glEnd();  
     }
+    glLineWidth(1.0);
 
     // draw interpolated polynomial
     glBegin(GL_LINE_STRIP);
     glColor3f(0.1,0.1,0.1);
-    for(int i = 0; i < 300; i++){
-        p0 = eval_interpolation_polynomial(inter0, (double) (i/100.0)-1.0) - 0.5;
-        glVertex2f((double)(i/100.0)-1.0,p0);
+    for(int i = 0; i < 500; i++){
+        p0 = eval_interpolation_polynomial(inter0, (double) (i/50.0)-5.0);
+        glVertex2f((double)(i/50.0)-5.0,p0);
     }
     glEnd();
+    
+    //draw coordinate system
+    glBegin(GL_LINES);
+    glColor3f(0.0,0.0,0.0);
+    glVertex2f(0.0,-100.0);
+    glVertex2f(0.0,100.0);
+    glVertex2f(100.0,0.0);
+    glVertex2f(-100.0,0.0);
+    glVertex2f(1.0,-.1);  
+    glVertex2f(1.0,.1);
+    glVertex2f(-1.0,-.1);
+    glVertex2f(-1.0,.1);
+    glVertex2f(.1,1.0);
+    glVertex2f(-.1,1.0);
+    glVertex2f(.1,-1.0);
+    glVertex2f(-.1,-1.0);
+    glEnd();
+    
     glFlush();
     glutSwapBuffers();
 }
@@ -202,10 +242,10 @@ reshape(int width, int height){
     glViewport(0, 0, width, height); 
     glLoadIdentity();
     if(width > height){								
-        glScalef((double) height/width, 1.0, 1.0);
+        glScalef(0.2 * (double) height/width, 0.2, 0.2);
     }
     else{												
-        glScalef(1.0, (double) width/height, 1.0);
+        glScalef(0.2, 0.2 * (double) width/height, 0.2);
     }
 }
 
@@ -242,14 +282,14 @@ key(unsigned char key, int x, int y){
                     glutPostRedisplay();
                     return;
         case 0x02D: if(m>1){m--; //'-' key;
-                    delete_all();
-                    setup(fctflag);
-                    glutPostRedisplay();
-                    return;
-		            }else{
-						printf("You can't decrease the amount of nodes any further. \n");
-					return;	
-					}
+                        delete_all();
+                        setup(fctflag);
+                        glutPostRedisplay();
+                        return;
+                    }else{
+                        printf("You can't decrease the amount of nodes any further. \n");
+                        return;	
+                    }
         case 'a':   printf("choose left boundary: \n");
                     CHKPOS(scanf("%lf",&a));
                     delete_all();
@@ -268,6 +308,7 @@ key(unsigned char key, int x, int y){
                     glutSetWindow(2);
                     glutIconifyWindow();
                     return;
+        default:    return;
     }
     Error:
     printf("You have not entered a number.\n");
@@ -298,14 +339,14 @@ key2(unsigned char key, int x, int y){
                     glutPostRedisplay();
                     return;
         case 0x02D: if(m>1){m--; //'-' key;
-                    delete_all();
-                    setup(fctflag);
-                    glutPostRedisplay();
-                    return;
-		            }else{
-						printf("You can't decrease the amount of nodes any further. \n");
-					return;	
-					}	
+                        delete_all();
+                        setup(fctflag);
+                        glutPostRedisplay();
+                        return;
+                    }else{
+                        printf("You can't decrease the amount of nodes any further. \n");
+                        return;	
+                    }	
        case 'a':    printf("choose left boundary: \n");
                     CHKPOS(scanf("%lf",&a));
                     delete_all();
@@ -324,6 +365,7 @@ key2(unsigned char key, int x, int y){
                     glutSetWindow(2);
                     glutIconifyWindow();
                     return;
+        default:    return;
     }
     Error:
     printf("You have not entered a number.\n");
@@ -337,8 +379,8 @@ main(int argc, char **argv){
         data[0] = atof(argv[1]);
         printf("lambda: %f\n", data[0]);
     }
-    a = 0.8;
-    b = 0.3;
+    a = 2.1;
+    b = -2.1;
         
     setup(fctflag);   
     
@@ -354,6 +396,7 @@ main(int argc, char **argv){
     glutReshapeWindow(600, 600);
     glutReshapeFunc(reshape);
     glutDisplayFunc(display2);
+    
     glutKeyboardFunc(key2); 
     
     glutTimerFunc(50, timer, 0);

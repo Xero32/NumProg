@@ -15,6 +15,7 @@
 /* Copied from math.h  */
 #define M_PI		3.14159265358979323846
 #endif		
+
  /* ------------------------------------------------------------
  * Constructor and destructor
  * ------------------------------------------------------------ */
@@ -32,7 +33,7 @@ new_interpolation(int m){
   inter->m = m;
   
   for(i = 0; i < m+1; i++){
-    inter->d[i] = 0.0;
+        inter->d[i] = 0.0;
   }
 
   return inter;
@@ -49,23 +50,22 @@ del_interpolation(pinterpolation inter){
 }
 
 /* Chebyshev points [a,b] */
-
+// m-te Ordnung bedeutet m+1 Interpolationspunkte! Korrektur!
 void
 setup_chebyshev_interpolationpoints(pinterpolation inter, double a, double b){
     int m = inter->m;
     double *x = inter->xi;
-//     assert(a<=b);
     if(a > b){
         double c = a;
         a = b;
         b = c;
     }
-//    assert(m);
-    double z = (b-a) / 2.0;
-    double w = (b+a) / 2.0;
-    
-    for(int i = 1; i < m+1; i++){
-        x[m-i] = w + z * cos( (2.0 * (double)i - 1.0) * M_PI / (2.0 * (double)m));
+    assert(m);
+    double z = (b-a) * 0.5;
+    double w = (b+a) * 0.5;
+    // stattdessen lieber Multiplikation
+    for(int i = 0; i < m+1; i++){
+        x[m-i] = w + z * cos( (2.0 * (double)i + 1.0) * M_PI * 0.5 / ((double)m + 1.0) );
     }
 }
 
@@ -73,15 +73,14 @@ void
 setup_aequidistant_interpolationpoints(pinterpolation inter, double a, double b){
     int m = inter->m;
     double *x = inter->xi;
-//     assert(b>=a);
     if(a > b){
         double c = a;
         a = b;
         b = c;
     }
-//    assert(m);
-    double z = (double)(b-a)/(m-1);
-    for(int i = 0; i < m; i++){
+    assert(m);
+    double z = (double)(b-a)/(m);
+    for(int i = 0; i < m+1; i++){
         x[i] = i * z + a;
     }
 }
@@ -98,7 +97,8 @@ eval_interpolated_values(pinterpolation inter, function f, void *data){
 }
 
 /* Evaluate Newton divided differences */
-
+// d[m] falsch
+// einfache methode, um d[i] zu checken ?
 void
 newton_divided_differences(pinterpolation inter){
     int m = inter->m;
@@ -110,7 +110,7 @@ newton_divided_differences(pinterpolation inter){
         d[u] = y[u];
     }
     for(int k = 1; k <= m; k++){
-        for(int j = m; j-->k;){
+        for(int j = m+1; j-->k;){ // int j = m+1
             int i = j-k;
             assert(x[j] - x[i]);
             d[j] = (d[j] - d[j-1]) / (x[j] - x[i]);
