@@ -21,7 +21,7 @@
 #define M_PI		3.14159265358979323846
 #endif	
 
-  
+  #define CHKPOS(f) if((err=f) < 0) goto Error
 /* ------------------------------------------------------------
 * Global variable
 *-------------------------------------------------------------*/
@@ -31,6 +31,12 @@ int m, n;
 int quadflag;
 pquadrature midquad, trquad;
 double data[1] = {0.0};
+int err;
+
+static void
+Printhelp(){
+    
+}
 /* ------------------------------------------------------------
 * Example function
 *-------------------------------------------------------------*/
@@ -235,7 +241,7 @@ keyboard(unsigned char key, int x, int y){
             printf("Composite Midpoint: %f\n",areamid_comp);
             printf("Composite Trapezoidal: %f\n\n",areatr_comp);
             glutPostRedisplay(); 
-            break;
+            return;
         case 0x02D: // '-' key
             if(n > 0){
                 glutSetWindow(2);
@@ -246,11 +252,31 @@ keyboard(unsigned char key, int x, int y){
                 printf("Composite Midpoint: %f\n",areamid_comp);
                 printf("Composite Trapezoidal: %f\n\n",areatr_comp);
                 glutPostRedisplay(); 
-                break;
+                return;
             }else{
                 printf("You cannot lower n any further.\n");
+                return;
             }
+//         case 'a':   printf("choose left boundary: \n");
+//                     CHKPOS(scanf("%lf",&a));
+//                     
+//                     glutPostRedisplay();
+//                     return;
+//         case 'b':   printf("choose right boundary: \n");
+//                     CHKPOS(scanf("%lf",&b));
+//                     glutPostRedisplay();
+//                     return;
+        case 'h':   Printhelp();
+                    glutSetWindow(1);
+                    glutIconifyWindow();
+                    glutSetWindow(2);
+                    glutIconifyWindow();
+                    return;
+        default:    return;
     }
+//     Error:
+//     printf("You have not entered a number.\n");
+    return;
 }
 
 
@@ -260,6 +286,8 @@ keyboard(unsigned char key, int x, int y){
 int main(int argc, char** argv){
     a = 0.0;
     b = M_PI * 0.5;
+//     a = -0.2;
+//     b = 2.0;
     n = 10;
     
     if(argc > 1) n = atof(argv[1]);
@@ -279,8 +307,6 @@ int main(int argc, char** argv){
     printf("Composite Midpoint: %f\n",areamid_comp);
     printf("Composite Trapezoidal: %f\n\n",areatr_comp);
     
-    
-    
     glutInit(&argc, argv);
     glutCreateWindow("Quadrature");
     glutPositionWindow(100, 100);
@@ -294,12 +320,7 @@ int main(int argc, char** argv){
     glutDisplayFunc(display2);
     glutReshapeFunc(reshape);
     glutKeyboardFunc(keyboard);
-    
-//     glutKeyboardFunc(key2); 
-//     del_quadrature(midquad);
-//     del_quadrature(trquad);
-//     del_pquadrature(trquad);
-//     glutTimerFunc(50, timer, 0);
+
     glutMainLoop();
 
     return EXIT_SUCCESS;
