@@ -166,23 +166,19 @@ display(){
     glEnd();
     glLineWidth(1.0);
     
-    areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
-    areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
-    printf("Composite Quadratures for n = %d:\n",n);
-    printf("Composite Midpoint: %f\n",areamid_comp);
-    printf("Composite Trapezoidal: %f\n\n",areatr_comp);
-    
-    
-//     double num = 123412341234.123456789; 
-//     char output[50] = {'\0'};
+//     areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
+//     areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
+//     printf("3Composite Quadratures for n = %d:\n",n);
+//     printf("3Composite Midpoint: %f\n",areamid_comp);
+//     printf("3Composite Trapezoidal: %f\n\n",areatr_comp);
 
-    snprintf(_areamid, 50, "%f", areamid);
-    snprintf(_areatr, 50, "%f", areatr);
-    
-    output(1.0, 0.5, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areamid);
-    output(0.2, 0.05, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areatr);
-//     glRasterPos2f(.50 , .70);
-//     glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12,a);
+    if(a == 0.0 && b == M_PI * 0.5){
+        snprintf(_areamid, 50, "%f", areamid);
+        snprintf(_areatr, 50, "%f", areatr);
+        
+        output(1.0, 0.5, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areamid);
+        output(0.2, 0.05, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areatr);
+    }
     glPopMatrix();
     glFlush();
     glutSwapBuffers();
@@ -263,31 +259,31 @@ display2(){
         glVertex2f((i+1)*l*u+a, 0.0);
         glEnd();
     }
-    
-    snprintf(_areamid_comp, 50, "%f", areamid_comp);
-    char txt1[50] = "Composite Midpoint Area:";
-    output(a+0.02, -0.4, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt1);
-    output(a+0.05, -0.5, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areamid_comp);
-    glColor4f(0.0,1.0,0.0,0.3);
-    glBegin(GL_POLYGON);
-    glVertex2f(a+0.02,-0.55);
-    glVertex2f(a+0.02,-0.45);
-    glVertex2f(a+0.28,-0.45);
-    glVertex2f(a+0.28,-0.55);
-    glEnd();
-    
-    snprintf(_areatr_comp, 50, "%f", areatr_comp);
-    char txt2[50] = "Composite Trapezoid Area:";
-    output(a+0.02, -0.1, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt2);
-    output(a+0.05, -0.2, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areatr_comp);
-    glColor4f(0.0,0.0,0.0,0.3);
-    glBegin(GL_POLYGON);
-    glVertex2f(a+0.02,-0.25);
-    glVertex2f(a+0.02,-0.15);
-    glVertex2f(a+0.28,-0.15);
-    glVertex2f(a+0.28,-0.25);
-    glEnd();
-    
+    if(a == 0.0 && b == M_PI * 0.5){
+        snprintf(_areamid_comp, 50, "%f", areamid_comp);
+        char txt1[50] = "Composite Midpoint Area:";
+        output(a+0.02, -0.4, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt1);
+        output(a+0.05, -0.5, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areamid_comp);
+        glColor4f(0.0,1.0,0.0,0.3);
+        glBegin(GL_POLYGON);
+        glVertex2f(a+0.02,-0.55);
+        glVertex2f(a+0.02,-0.45);
+        glVertex2f(a+0.38,-0.45);
+        glVertex2f(a+0.38,-0.55);
+        glEnd();
+        
+        snprintf(_areatr_comp, 50, "%f", areatr_comp);
+        char txt2[50] = "Composite Trapezoid Area:";
+        output(a+0.02, -0.1, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt2);
+        output(a+0.05, -0.2, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areatr_comp);
+        glColor4f(0.0,0.0,0.0,0.3);
+        glBegin(GL_POLYGON);
+        glVertex2f(a+0.02,-0.25);
+        glVertex2f(a+0.02,-0.15);
+        glVertex2f(a+0.38,-0.15);
+        glVertex2f(a+0.38,-0.25);
+        glEnd();
+    }
     glPopMatrix();
     glFlush();
     glutSwapBuffers();
@@ -315,22 +311,23 @@ keyboard(unsigned char key, int x, int y){
         case 0x02B: // '+' key
             glutSetWindow(2); 
             n++; 
-            areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
-            areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
-            printf("Composite Quadratures for n = %d:\n",n);
-            printf("Composite Midpoint: %f\n",areamid_comp);
-            printf("Composite Trapezoidal: %f\n\n",areatr_comp);
+//             areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
+//             areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
+//             printf("1Composite Quadratures for n = %d:\n",n);
+//             printf("1Composite Midpoint: %f\n",areamid_comp);
+//             printf("1Composite Trapezoidal: %f\n\n",areatr_comp);
             glutPostRedisplay(); 
             return;
         case 0x02D: // '-' key
             if(n > 1){
                 glutSetWindow(2);
                 n--; 
-                areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
-                areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
-                printf("Composite Quadratures for n = %d:\n",n);
-                printf("Composite Midpoint: %f\n",areamid_comp);
-                printf("Composite Trapezoidal: %f\n\n",areatr_comp);
+//                 areamid = eval_quadrature(midquad, a, b, (function)f, data);
+//                 areamid_comp = eval_composite_quadrature(midquad, a, b, n, (function)f, data);
+//                 areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
+//                 printf("2Composite Quadratures for n = %d:\n",n);
+//                 printf("2Composite Midpoint: %f\n",areamid_comp);
+//                 printf("2Composite Trapezoidal: %f\n\n",areatr_comp);
                 glutPostRedisplay(); 
                 return;
             }else{
@@ -366,11 +363,11 @@ keyboard(unsigned char key, int x, int y){
 int main(int argc, char** argv){
     a = 0.0;
     b = M_PI * 0.5;
-//     a = -2.0;
-//     b = 10.0;
+//     a = -1.0;
+//     b = 2.0;
     n = 10;
     
-    if(argc > 1) n = atof(argv[1]);
+//     if(argc > 1) n = atof(argv[1]);
     
     midquad = setup_midpointrule();
     areamid = eval_quadrature(midquad, a, b, (function)f, data);
@@ -381,11 +378,11 @@ int main(int argc, char** argv){
     areatr = eval_quadrature(trquad, a, b, (function)f, data);
     areatr_comp = eval_composite_quadrature(trquad, a, b, n, (function)f, data);
     
-    printf("Integral Midpoint: %f\n",areamid);
-    printf("Integral Trapezoidal: %f\n\n",areatr);
-    printf("Composite Quadratures for n = %d:\n",n);
-    printf("Composite Midpoint: %f\n",areamid_comp);
-    printf("Composite Trapezoidal: %f\n\n",areatr_comp);
+    printf("0Integral Midpoint: %f\n",areamid);
+    printf("0Integral Trapezoidal: %f\n\n",areatr);
+    printf("0Composite Quadratures for n = %d:\n",n);
+    printf("0Composite Midpoint: %f\n",areamid_comp);
+    printf("0Composite Trapezoidal: %f\n\n",areatr_comp);
     
     glutInit(&argc, argv);
     glutCreateWindow("Quadrature");
