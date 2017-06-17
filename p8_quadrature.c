@@ -33,16 +33,29 @@ int quadflag;
 pquadrature midquad, trquad;
 double data[1] = {0.0};
 int err;
-char _areamid[50] = {'\0'}; char _areatr[50] = {'\0'};
+char _areamid[50] = {'\0'}; char _areatr[50] = {'\0'}; char _n[50] = {'\0'};
 char _areamid_comp[50] = {'\0'}; char _areatr_comp[50] = {'\0'};
 
-static void //TODO
+static void 
 Printhelp(){
+    printf("This program shows the single midpoint (green area) and \ntrapezoidal (grey area) quadrature in window 'Quadrature'.\n");
+    printf("The corresponding area values are displayed, if the interval \nis chosen to be close to [0,pi/2].\n\n");
+    printf("In window 'Composition' you can see the composite quadratures \nof the same kinds, with the order 'n' and areas \non screen for appropriate intervals.\n\n");
+    printf("Optionally you can set 'n' as an input at the start of the program. Afterwards\n");
+    printf("increase or decrease 'n' with the '+' or '-' key and watch \nthe calculated area converge.\n");
+    printf("The areas are given in the command prompt as well.\n");
     
 }
 /* ------------------------------------------------------------
 * Example function
 *-------------------------------------------------------------*/
+static void
+swap(double *a, double *b){
+        double c = *a;
+        *a = *b;
+        *b = c;    
+}
+
 static double
 f(double x){
     return 5.0 * exp(2.0 * x) * cos(x) / (exp(M_PI)-2.0);
@@ -50,6 +63,7 @@ f(double x){
 
 double
 fct_max(function f, void *data, double a, double b){
+    if(a > b) swap(&a, &b);
     double max = 0.0;
     double l = (b-a) * 0.5;
     double u = 1.0 / (MAXACC);
@@ -61,7 +75,7 @@ fct_max(function f, void *data, double a, double b){
     return max;
 }
 
-void 
+static void 
 output(float x, float y, float r, float g, float b, void *font, char *string){
   glColor3f( r, g, b );
   glRasterPos2f(x, y);
@@ -78,6 +92,7 @@ setup(pquadrature quad, int flag, double *area, double *area_comp, function f, v
         case 1: quad = setup_midpointrule(); break;
         case 2: quad = setup_trapezoidalrule(); break;
     }
+    if(a > b) swap(&a, &b);
     *area = eval_quadrature(quad, a, b, f, data);
     if(n > 1) *area_comp = eval_composite_quadrature(quad, a, b, n, f, data);
     else *area_comp = *area; //eval_composite_quadrature(quad, a, b, 1, f, data);  //TODO Problem!
@@ -88,7 +103,7 @@ setup(pquadrature quad, int flag, double *area, double *area_comp, function f, v
 /* ------------------------------------------------------------
 * GLUT functions
 *-------------------------------------------------------------*/
-void
+static void
 draw_coord(){
     glColor3f(0.0,0.0,0.0);
     glVertex2f(0.0,-1000.0);    //y-axis
@@ -118,14 +133,15 @@ draw_coord(){
     glVertex2f(-0.1,-1.0);
 }
 
-void
+static void
 draw_marks(double loc, double wid){
     glVertex2f(loc, wid*0.5);
     glVertex2f(loc,-wid*0.5);  
 }
 
-void
+static void
 display(){
+    if(a > b) swap(&a, &b);
     glutSetWindow(1);
     double aa = a;
     double bb = b;
@@ -134,7 +150,6 @@ display(){
     glEnable (GL_BLEND); 
     glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glPushMatrix();
-//     glOrtho(-.4,.1,-.1,0.8,-1.0,1.0);
     
     // draw function
     glBegin(GL_LINE_STRIP);
@@ -148,8 +163,8 @@ display(){
     glColor4f(0.0,1.0,0.0,0.4);
     glBegin(GL_POLYGON);
     glVertex2f(aa,0.0);
-    glVertex2f(aa,f(M_PI * 0.25));
-    glVertex2f(bb,f(M_PI * 0.25));
+    glVertex2f(aa,f((a+b)*0.5));
+    glVertex2f(bb,f((a+b)*0.5));
     glVertex2f(bb,0.0);
     glEnd();
     
@@ -176,14 +191,15 @@ display(){
     glEnd();
     glLineWidth(1.0);
     
-    printf("3Composite Quadratures for n = %d:\n",n);
-    printf("3Composite Midpoint: %f\n",areamid_comp);
-    printf("3Composite Trapezoidal: %f\n\n",areatr_comp);
-
-    if(a == 0.0 && b == M_PI * 0.5){
+    // Omit display of area for vastly bigger or smaller boundaries, 
+    // because scaling with max(f) ruins arrangement of text.
+    // Show information on screen only for this particular function 
+    // near the given interval [0,pi/2].
+    // It is not meant for generalization, just a little treat.
+    if(a > -1.0 && a < 1.0 && b > M_PI * 0.5 - 0.2 && b <= 1.8){
         snprintf(_areamid, 50, "%f", areamid);
         snprintf(_areatr, 50, "%f", areatr);
-            
+        
         output(1.0, 0.5, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areamid);
         output(0.2, 0.05, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areatr);
     }
@@ -192,8 +208,9 @@ display(){
     glutSwapBuffers();
 }
 
-void
+static void
 display2(){
+    if(a > b) swap(&a, &b);
     glutSetWindow(2);
     double aa = a;
     double bb = b;
@@ -267,7 +284,12 @@ display2(){
         glEnd();
     }
 
-    if(a == 0.0 && b == M_PI * 0.5){
+    // Omit display of area for vastly bigger or smaller boundaries, 
+    // because scaling with max(f) ruins arrangement of text.
+    // Show information on screen only for this particular function 
+    // near the given interval [0,pi/2].
+    // It is not meant for generalization, just a little treat.
+    if(a > -1.0 && a < 1.0 && b > M_PI * 0.5 - 0.2 && b <= 1.8){
         snprintf(_areamid_comp, 50, "%f", areamid_comp);
         char txt1[50] = "Composite Midpoint Area:";
         output(a+0.02, -0.4, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt1);
@@ -282,7 +304,7 @@ display2(){
         
         snprintf(_areatr_comp, 50, "%f", areatr_comp);
         char txt2[50] = "Composite Trapezoid Area:";
-        output(a+0.02, -0.1, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt2);
+        output(a+0.02, -0.1, 0.0, 0.0, 0.0,GLUT_BITMAP_HELVETICA_12, txt2);
         output(a+0.05, -0.2, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _areatr_comp);
         glColor4f(0.0,0.0,0.0,0.3);
         glBegin(GL_POLYGON);
@@ -291,14 +313,20 @@ display2(){
         glVertex2f(a+0.38,-0.15);
         glVertex2f(a+0.38,-0.25);
         glEnd();
+        
+        snprintf(_n, 50, "%d", n);    
+        char txtn[50] = "n = ";
+        output(0.25, 1.0, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, txtn);
+        output(0.34, 1.0, 0.0, 0.0, 0.0, GLUT_BITMAP_HELVETICA_12, _n);
     }
     glPopMatrix();
     glFlush();
     glutSwapBuffers();
 }
 
-void
+static void
 reshape(int width, int height){
+    if(a > b) swap(&a, &b);
     glViewport(0, 0, width, height); 
     glLoadIdentity();
     
@@ -311,7 +339,7 @@ reshape(int width, int height){
     glTranslatef(-(b+a)/2.0,0.0,0.0);
 }
 
-void
+static void
 keyboard(unsigned char key, int x, int y){
     switch(key){
         case 27: 
@@ -321,9 +349,9 @@ keyboard(unsigned char key, int x, int y){
             n++; 
             setup(midquad, 1, &areamid, &areamid_comp, (function)f, data);
             setup(trquad, 2, &areatr, &areatr_comp, (function)f, data);
-            printf("1Composite Quadratures for n = %d:\n",n);
-            printf("1Composite Midpoint: %f\n",areamid_comp);
-            printf("1Composite Trapezoidal: %f\n\n",areatr_comp);
+            printf("Composite Quadratures for n = %d:\n",n);
+            printf("Composite Midpoint Area: %f\n",areamid_comp);
+            printf("Composite Trapezoidal Area: %f\n\n",areatr_comp);
             glutPostRedisplay(); 
             return;
         case 0x02D: // '-' key
@@ -332,9 +360,9 @@ keyboard(unsigned char key, int x, int y){
                 n--;
                 setup(midquad, 1, &areamid, &areamid_comp, (function)f, data);
                 setup(trquad, 2, &areatr, &areatr_comp, (function)f, data);
-                printf("2Composite Quadratures for n = %d:\n",n);
-                printf("2Composite Midpoint: %f\n",areamid_comp);
-                printf("2Composite Trapezoidal: %f\n\n",areatr_comp);
+                printf("Composite Quadratures for n = %d:\n",n);
+                printf("Composite Midpoint Area: %f\n",areamid_comp);
+                printf("Composite Trapezoidal Area: %f\n\n",areatr_comp);
                 glutPostRedisplay(); 
                 return;
             }else{
@@ -367,22 +395,21 @@ keyboard(unsigned char key, int x, int y){
 /*--------------------------------------------------------------
  * Main function
  * ------------------------------------------------------------*/
-int main(int argc, char** argv){
+int 
+main(int argc, char** argv){
     a = 0.0;
     b = M_PI * 0.5;
-//     a = -1.0;
-//     b = 2.0;
-    n = 10;
+    n = 11;
     
     if(argc > 1) n = atof(argv[1]);
     setup(midquad, 1, &areamid, &areamid_comp, (function)f, data);
     setup(trquad, 2, &areatr, &areatr_comp, (function)f, data);
 
-    printf("0Composite Quadratures for n = %d:\n",n);
-    printf("0Composite Midpoint: %f\n",areamid_comp);
-    printf("0Composite Trapezoidal: %f\n\n",areatr_comp);
-    printf("0Midpoint Integral: %f\n",areamid);
-    printf("0Trapezoidal Integral: %f\n\n",areatr);
+    printf("Composite Quadratures for n = %d:\n",n);
+    printf("Composite Midpoint Area: %f\n",areamid_comp);
+    printf("Composite TrapezoidalArea: %f\n\n",areatr_comp);
+    printf("Midpoint Integral Area: %f\n",areamid);
+    printf("Trapezoidal Integral Area: %f\n\n",areatr);
     
     glutInit(&argc, argv);
     glutCreateWindow("Quadrature");

@@ -103,17 +103,8 @@ eval_composite_quadrature(pquadrature quad, double a, double b, int n, function 
     double l = b-a;
     double u = 1.0/(double)n;
     double result = 0.0;
-    
-//     if(n == 1){
-//         printf("CHECK\n");
-//         result = eval_quadrature(quad, -1, 1, f, data);
-//         printf("%f\n",result);
-//         return result;
-//     }
     for(int i = 0; i < n; i++){            
         result += eval_quadrature(quad, (double)i*l*u+a, (double)(i+1)*l*u+a, f, data);
     }
-    
-    
     return result;
 }
