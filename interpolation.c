@@ -63,9 +63,9 @@ setup_chebyshev_interpolationpoints(pinterpolation inter, double a, double b){
     assert(m);
     double z = (b-a) * 0.5;
     double w = (b+a) * 0.5;
-    // stattdessen lieber Multiplikation
+
     for(int i = 0; i < m+1; i++){
-        x[m-i] = w + z * cos( (2.0 * (double)i + 1.0) * M_PI * 0.5 / ((double)m + 1.0) );
+        x[i] = w + z * cos( (2.0 * (double)i + 1.0) * M_PI * 0.5 / ((double)m + 1.0) );
     }
 }
 
@@ -96,6 +96,8 @@ eval_interpolated_values(pinterpolation inter, function f, void *data){
     }
 }
 
+
+
 /* Evaluate Newton divided differences */
 // d[m] falsch
 // einfache methode, um d[i] zu checken ?
@@ -105,7 +107,7 @@ newton_divided_differences(pinterpolation inter){
     double *x = inter->xi;
     double *y = inter->f;
     double *d = inter->d;
-    d[0] = y[0];
+//     d[0] = y[0];
     for(int u = 0; u <= m; u++){
         d[u] = y[u];
     }
@@ -117,6 +119,31 @@ newton_divided_differences(pinterpolation inter){
         }
     }
 }
+
+// //Ove:
+// 
+// /* Evaluate Newton divided differences */
+// void
+// newton_divided_differences(pinterpolation inter){
+// 	int m = inter->m;
+// 	double* xi = inter->xi;
+// 	double* yi = inter->f;
+// 	double* di= inter->d;
+// 	
+// 	di[0]=yi[0];
+// 	
+// 	for(int k=1; k<m+1; k++){
+// 		double n=1;
+// 		di[k]=0.0;
+// 		for(int i=0; i<k; i++){
+// 			di[k]-=n*di[i];
+// 			n*=xi[k]-xi[i];
+// 		}
+// 		di[k]+=yi[k];
+// 		di[k]/=n;
+// 	}
+// }
+
 
 /* Horner schema */
 

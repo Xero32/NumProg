@@ -27,7 +27,7 @@
 /* ------------------------------------------------------------
 * Global variable
 *-------------------------------------------------------------*/
-int m = 6;
+int m;
 double t = 0.0;
 // int n = 50;
 int n;
@@ -81,7 +81,7 @@ setup_transition_points(pinterpolation inter0, pinterpolation inter1, double ste
     double *x0 = inter0->xi;
     double *x1 = inter1->xi;
     for(int i = 0; i < m+1; i++){
-        x0[i] = (x1[i] - x0[i]) * step + x0[i];
+        x0[i] = (x1[m-i] - x0[i]) * step + x0[i];
     }
 }
 
@@ -131,6 +131,12 @@ display(){
     glClearColor(0.9,0.9,0.9,1.0);
     glPushMatrix();
     
+//     double wl = (b-a) * 0.5 / ( -1.0 - (a+b) * 0.5);
+//     double wr = (b-a) * 0.5 / (1.0 - (a+b) * 0.5);
+    
+//     glOrtho(-1.0,1.0,-1.0,1.0,-1.0,1.0);
+    // clipping planes glOrtho(left,right,top,bottom,near,far);
+    
     //draw interpolation
     glBegin(GL_LINE_STRIP);
     glColor3f(0.0,0.8,0.0);
@@ -155,9 +161,9 @@ display(){
     glBegin(GL_LINE_STRIP);
     glColor3f(0.0,0.0,0.9);
     newton_divided_differences(inter1);
-    for(int j = 0; j < 500; j++){
-        p1 = eval_interpolation_polynomial(inter1, (double)(j/50.0)-5.0);
-        glVertex2f((double)(j/50.0)-5.0,p1);
+    for(int j = 0; j < 1000; j++){
+        p1 = eval_interpolation_polynomial(inter1, (double)(j/50.0)-10.0);
+        glVertex2f((double)(j/50.0)-10.0,p1);
     }
     glEnd();
     
@@ -210,9 +216,9 @@ display2(){
     // draw interpolated polynomial
     glBegin(GL_LINE_STRIP);
     glColor3f(0.1,0.1,0.1);
-    for(int i = 0; i < 500; i++){
-        p0 = eval_interpolation_polynomial(inter0, (double) (i/50.0)-5.0);
-        glVertex2f((double)(i/50.0)-5.0,p0);
+    for(int i = 0; i < 1000; i++){
+        p0 = eval_interpolation_polynomial(inter0, (double) (i/25.0)-10.0);
+        glVertex2f((double)(i/25.0)-10.0,p0);
     }
     glEnd();
     
@@ -241,12 +247,15 @@ void
 reshape(int width, int height){
     glViewport(0, 0, width, height); 
     glLoadIdentity();
+    
+    
     if(width > height){								
-        glScalef(0.2 * (double) height/width, 0.2, 0.2);
+        glScalef(0.5 / (b-a) * 2.0 * (double) height/width, 0.8 / fabs(data[0]), 2.0);
     }
     else{												
-        glScalef(0.2, 0.2 * (double) width/height, 0.2);
+        glScalef(0.5 / (b-a) * 2.0, 0.8 / fabs(data[0]) * (double) width/height, 2.0);
     }
+    glTranslatef(-(b+a)*.5,0.0,0.0);
 }
 
 /* If necessary use the pictures as orientation,
@@ -281,7 +290,7 @@ key(unsigned char key, int x, int y){
                     setup(fctflag);
                     glutPostRedisplay();
                     return;
-        case 0x02D: if(m>1){m--; //'-' key;
+        case 0x02D: if(m > 1){m--; //'-' key;
                         delete_all();
                         setup(fctflag);
                         glutPostRedisplay();
@@ -338,7 +347,7 @@ key2(unsigned char key, int x, int y){
                     setup(fctflag);  
                     glutPostRedisplay();
                     return;
-        case 0x02D: if(m>1){m--; //'-' key;
+        case 0x02D: if(m > 1){m--; //'-' key;  // try m > 0
                         delete_all();
                         setup(fctflag);
                         glutPostRedisplay();
@@ -379,8 +388,9 @@ main(int argc, char **argv){
         data[0] = atof(argv[1]);
         printf("lambda: %f\n", data[0]);
     }
-    a = 2.1;
-    b = -2.1;
+    m = 6;
+    a = 0;
+    b = 5.0;
         
     setup(fctflag);   
     
