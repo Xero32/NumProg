@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 8 - Approximation von Integralen Quadratur  	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 				 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marko Hollm, Marvin Becker			 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
   #include <stdio.h>	// TODO remove
@@ -76,24 +76,28 @@ map_quadrature_points(pquadrature quad, double a, double b, double *x){
     double h = (b+a) * 0.5;
 
     for(int i = 0; i < m+1; i++){
-        xq[i] = h + d * x[i];
-    }
+        x[i] = h + d * xq[i];
 }
+
 
 
 double
 eval_quadrature(pquadrature quad, double a, double b, function f, void *data){
-    double *xq = quad->xq;
-    double *w = quad->w;
     int m = quad->m;
+    double *x;
+    x = calloc(m+1, sizeof(double));
+    double *w = quad->w;
+    
     double d = (b-a) * 0.5;
     double A = 0.0;
     
-    map_quadrature_points(quad,a,b,xq);
+    
+    map_quadrature_points(quad,a,b,x);
     
     for(int i = 0; i < m+1; i++){
-        A += w[i] * f(xq[i],data);
+        A += w[i] * f(x[i],data);
     }
+    free(x);
     return  A * d;
 }
 

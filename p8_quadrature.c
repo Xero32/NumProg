@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 	Serie 8 - Approximation von Integralen (Quadratur) 	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 						 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marko Hollm, Marvin Becker					 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
 		
@@ -94,7 +94,7 @@ setup(pquadrature quad, int flag, double *area, double *area_comp, function f, v
     }
     if(a > b) swap(&a, &b);
     *area = eval_quadrature(quad, a, b, f, data);
-    if(n > 1) *area_comp = eval_composite_quadrature(quad, a, b, n, f, data);
+    if(n > 0) *area_comp = eval_composite_quadrature(quad, a, b, n, f, data);
     else *area_comp = *area; //eval_composite_quadrature(quad, a, b, 1, f, data);  //TODO Problem!
     //     else *area_comp = eval_quadrature(quad, a, b, f, data);
     del_quadrature(quad);
@@ -289,7 +289,7 @@ display2(){
     // Show information on screen only for this particular function 
     // near the given interval [0,pi/2].
     // It is not meant for generalization, just a little treat.
-    if(a > -1.0 && a < 1.0 && b > M_PI * 0.5 - 0.2 && b <= 1.8){
+    if(a > -1.0 && a < 1.0 && b > M_PI * 0.1 && b <= 1.8){
         snprintf(_areamid_comp, 50, "%f", areamid_comp);
         char txt1[50] = "Composite Midpoint Area:";
         output(a+0.02, -0.4, 0.0,0.0,0.0,GLUT_BITMAP_HELVETICA_12, txt1);
@@ -397,7 +397,8 @@ keyboard(unsigned char key, int x, int y){
  * ------------------------------------------------------------*/
 int 
 main(int argc, char** argv){
-    a = 0.0;
+    a = -0.5;
+    a = M_PI * 0.2;
     b = M_PI * 0.5;
     n = 11;
     
