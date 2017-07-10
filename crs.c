@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /* 		Serie 10 - Schwachbesetzte Matrizen 		 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 				 		 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marko Hollm, Marvin Becker			 		 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
 #include <stdio.h>
@@ -57,6 +57,8 @@ del_crsmatrix(pcrsmatrix crs){
 
 pcrsmatrix
 setup_poisson(unsigned int m){
+    // TODO
+    // überarbeiten für m > 1 
     assert(m > 1);
     double hinsq = (m+1) * (m+1); // = h ^ (-2)
     pcrsmatrix A = new_crsmatrix(m, m);
@@ -80,16 +82,29 @@ setup_poisson(unsigned int m){
     Aa[Ai[m]-2] = -1.0 * hinsq;
     Aa[Ai[m]-1] = 2.0 * hinsq;
     
+    
+    for(int i = 0; i < Ai[m]; i++){
+        printf("Aa[%d] = %f\n",i,Aa[i]);
+    }
+    
+    // überarbeiten für m > 1
     unsigned int *Aj = calloc(Ai[m], sizeof(unsigned int));
     Aj[0] = 0;
     Aj[1] = 1;    
     Aj[2] = 0;
-    Aj[3] = 1;
-    Aj[4] = 2;
-    for(int i = 5; i < Ai[m]; i++){
+//     Aj[3] = 1;
+//     Aj[4] = 2;
+    
+    for(int i = 3; i < Ai[m]; i++){
         Aj[i] = Aj[i-3] + 1;
     }
     
+    //check
+    for(int i = 0; i < Ai[m]; i++){
+        printf("Aj[%d] = %d\n",i,Aj[i]);
+    }
+    
+    // regular:
     A->Aa = Aa;
     A->Ai = Ai;
     A->Aj = Aj;

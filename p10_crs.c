@@ -2,8 +2,8 @@
 /*		     Numerische Programmierung  	 	 */
 /*   	Serie 10 - Schwachbesetzte Matrizen (Richardson)	 */
 /* ------------------------------------------------------------- */
-/*	Autoren: 		 				 */
-/*	Versionsnummer:						 */
+/*	Autoren: 	Marko Hollm, Marvin Becker	 				 */
+/*	Versionsnummer:	1					 */
 /*---------------------------------------------------------------*/
 
   #include <stdio.h>		
@@ -44,32 +44,32 @@ main(void){
   double data[1];
   double theta, h, lambda;
   
-  int ctr = 0;
+//   int ctr = 0;
   double diff;
   m = 2;					/* problem dimension */
   data[0] = 1.0;
   theta = 0.01;
   
     
-  double theta0 = 0.00000001;
-  FILE *f;
-  f= fopen("richardson7.txt", "a");
-  do{
-    switch(ctr){
-      default: break;
-      case 0: ctr++; theta = theta0; break;
-      case 1: ctr++; theta = theta0 * 2; break;
-      case 2: ctr++; theta = theta0 * 4; break;
-      case 3: ctr++; theta = theta0 * 6; break;
-      case 4: ctr++; theta = theta0 * 8; break;
-      case 5: ctr++; theta = theta0 *= 10; break;
-      case 6: ctr = 1; 
-            if(theta0 >= 0.02){
-                theta0 = 0.0000001;
-                m++;
-            }
-            continue;
-    }
+//   double theta0 = 0.01;
+//   FILE *f;
+//   f= fopen("richardson7.txt", "a");
+//   do{
+//     switch(ctr){
+//       default: break;
+//       case 0: ctr++; theta = theta0; break;
+//       case 1: ctr++; theta = theta0 * 2; break;
+//       case 2: ctr++; theta = theta0 * 4; break;
+//       case 3: ctr++; theta = theta0 * 6; break;
+//       case 4: ctr++; theta = theta0 * 8; break;
+//       case 5: ctr++; theta = theta0 *= 10; break;
+//       case 6: ctr = 1; 
+//             if(theta0 >= 0.02){
+//                 theta0 = 0.0000001;
+//                 m++;
+//             }
+//             continue;
+//     }
   
   h = 1.0/(m+1);
   printf("Solve poisson equation with Richardson iteration\n");
@@ -96,7 +96,7 @@ main(void){
     printf("Richardson %f \t exakt %f \t difference %e \n", x->x[i],  b->x[i]/ lambda, diff = fabs(x->x[i] - b->x[i]/ lambda));
   }
  
- WriteToFile(f, m, theta, diff);
+//  WriteToFile(f, m, theta, diff);
  
 
  
@@ -107,7 +107,7 @@ main(void){
   del_vector(x);
   del_vector(b);
   
-  }while(m < 100);
-  if(f) fclose(f);
+//   }while(m < 100);
+//   if(f) fclose(f);
   return EXIT_SUCCESS;
 }
